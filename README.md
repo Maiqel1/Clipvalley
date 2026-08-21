@@ -1,4 +1,4 @@
-# Clipsense
+# Clipvalley
 
 Two-way clipboard sync. Paste text or an image on one device, sign in on another, copy it back. Sync is tied to your **account**, not your devices — there is no pairing step. Any clip can get a public read-only share link.
 

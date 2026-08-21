@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { signIn, signUp } from "@/lib/actions/auth";
 import { emptyAuthState } from "@/lib/actions/types";
@@ -14,7 +15,22 @@ import { duration, easeOutQuart, fadeUp } from "@/lib/motion";
 
 type Tab = "login" | "signup";
 
-export function AuthCard({ initialTab, next }: { initialTab: Tab; next?: string }) {
+const ERROR_COPY: Record<string, string> = {
+  oauth_failed: "Google sign-in didn't complete. Please try again.",
+  missing_code: "That sign-in link was incomplete. Please try again.",
+  invalid_link: "That confirmation link isn't valid.",
+  expired_link: "That confirmation link has expired. Sign in to get a new one.",
+};
+
+export function AuthCard({
+  initialTab,
+  next,
+  error,
+}: {
+  initialTab: Tab;
+  next?: string;
+  error?: string;
+}) {
   const [tab, setTab] = React.useState<Tab>(initialTab);
   const [direction, setDirection] = React.useState(0);
 
@@ -31,7 +47,12 @@ export function AuthCard({ initialTab, next }: { initialTab: Tab; next?: string 
     window.history.replaceState(null, "", url);
   }
 
-  const state = tab === "login" ? loginState : signupState;
+  const active = tab === "login" ? loginState : signupState;
+  const linkError = error ? (ERROR_COPY[error] ?? "Something went wrong. Please try again.") : null;
+  const state = {
+    error: active.error ?? linkError,
+    notice: active.notice,
+  };
 
   return (
     <main className="z-10 mx-auto w-full max-w-md">
@@ -49,7 +70,7 @@ export function AuthCard({ initialTab, next }: { initialTab: Tab; next?: string 
           priority
           className="mb-4 size-20 object-contain"
         />
-        <h1 className="text-headline-lg-mobile text-primary md:text-headline-lg">Clipsense</h1>
+        <h1 className="text-headline-lg-mobile text-primary md:text-headline-lg">Clipvalley</h1>
         <p className="mt-2 text-center text-body-md text-on-surface-variant">
           Seamlessly sync your clipboard.
         </p>
@@ -151,6 +172,17 @@ export function AuthCard({ initialTab, next }: { initialTab: Tab; next?: string 
                 <Button type="submit" size="lg" loading={signupPending} className="mt-2">
                   Create Account
                 </Button>
+                <p className="text-center text-body-sm text-on-surface-variant">
+                  By signing up you agree to our{" "}
+                  <Link className="text-primary hover:underline" href="/terms">
+                    Terms
+                  </Link>{" "}
+                  and{" "}
+                  <Link className="text-primary hover:underline" href="/privacy">
+                    Privacy Policy
+                  </Link>
+                  .
+                </p>
               </form>
             )}
           </motion.div>

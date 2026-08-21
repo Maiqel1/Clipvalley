@@ -7,8 +7,8 @@ import { useIsTouch } from "@/lib/use-capabilities";
 import { Icon } from "@/components/ui/icon";
 import { IconButton } from "@/components/ui/button";
 
-const DISMISS_KEY = "clipsense:bookmark-dismissed";
-const VISITS_KEY = "clipsense:visits";
+const DISMISS_KEY = "clipvalley:bookmark-dismissed";
+const VISITS_KEY = "clipvalley:visits";
 
 export function BookmarkPrompt() {
   const [visible, setVisible] = React.useState(false);
@@ -46,13 +46,13 @@ export function BookmarkPrompt() {
           <Icon name="bookmark" size={20} filled />
           <p className="flex-1 text-body-sm">
             {isTouch ? (
-              <>Add Clipsense to your Home Screen for one-tap access.</>
+              <>Add Clipvalley to your Home Screen for one-tap access.</>
             ) : (
               <>
                 Press{" "}
                 <kbd className="rounded-sm bg-white/20 px-1.5 py-0.5 text-label-sm">{shortcut}</kbd>{" "}
                 + <kbd className="rounded-sm bg-white/20 px-1.5 py-0.5 text-label-sm">D</kbd> to
-                bookmark Clipsense.
+                bookmark Clipvalley.
               </>
             )}
           </p>

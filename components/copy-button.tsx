@@ -11,6 +11,7 @@ type CopyButtonProps = {
   onCopy: () => Promise<void>;
   label?: string;
   successMessage?: string;
+  errorMessage?: string;
   variant?: "solid" | "icon";
   className?: string;
 };
@@ -19,6 +20,7 @@ export function CopyButton({
   onCopy,
   label = "Copy",
   successMessage = "Copied to clipboard",
+  errorMessage = "Could not copy that.",
   variant = "solid",
   className,
 }: CopyButtonProps) {
@@ -42,8 +44,8 @@ export function CopyButton({
     } catch (error) {
       toast(
         error instanceof Error && error.message === "UNSUPPORTED"
-          ? "This browser can't copy images. Use Download instead."
-          : "Could not copy that.",
+          ? "This browser can't copy images. Use Save instead."
+          : errorMessage,
         "error",
       );
     }

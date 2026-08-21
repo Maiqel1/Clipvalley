@@ -41,10 +41,13 @@ const MATERIAL_SYMBOLS_HREF =
   "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" +
   `&icon_names=${ICON_NAMES}&display=block`;
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://clipvalley.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Clipsense — your clipboard, everywhere",
-    template: "%s · Clipsense",
+    default: "Clipvalley — your clipboard, everywhere",
+    template: "%s · Clipvalley",
   },
   description:
     "Paste text or an image on one device, sign in on another, copy it back. No pairing, no cables.",

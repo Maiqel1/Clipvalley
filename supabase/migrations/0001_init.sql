@@ -1,4 +1,4 @@
--- Clipsense initial schema. Safe to re-run.
+-- Clipvalley initial schema. Safe to re-run.
 
 create table if not exists public.profiles (
   id            uuid primary key references auth.users(id) on delete cascade,

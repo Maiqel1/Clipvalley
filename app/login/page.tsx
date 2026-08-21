@@ -6,14 +6,14 @@ export const metadata: Metadata = { title: "Sign in" };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; next?: string }>;
+  searchParams: Promise<{ tab?: string; next?: string; error?: string }>;
 }) {
-  const { tab, next } = await searchParams;
+  const { tab, next, error } = await searchParams;
 
   return (
     <div className="relative flex min-h-screen items-center justify-center p-margin-mobile md:p-margin-desktop">
       <div className="ambient-bg" />
-      <AuthCard initialTab={tab === "signup" ? "signup" : "login"} next={next} />
+      <AuthCard initialTab={tab === "signup" ? "signup" : "login"} next={next} error={error} />
     </div>
   );
 }

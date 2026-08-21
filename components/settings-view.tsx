@@ -38,7 +38,7 @@ export function SettingsView({ username, email, hasPassword }: SettingsViewProps
       </motion.header>
 
       <div className="flex max-w-xl flex-col gap-gutter">
-        <Card title="Username" description="How you're identified inside Clipsense.">
+        <Card title="Username" description="How you're identified inside Clipvalley.">
           <form action={usernameAction} className="flex flex-col gap-4">
             <Field
               label="Username"

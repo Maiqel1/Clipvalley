@@ -9,6 +9,7 @@ import { Chip } from "@/components/ui/chip";
 import { Icon } from "@/components/ui/icon";
 import { ToastProvider } from "@/components/ui/toast";
 import { SharedClipActions } from "@/components/shared-clip-actions";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
   title: "Shared clip",
@@ -49,7 +50,7 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
         <header className="mx-auto mb-10 flex w-full max-w-2xl items-center gap-4">
           <Image src="/logo.png" alt="" width={44} height={44} className="size-11 object-contain" />
           <h1 className="text-headline-md text-on-surface md:text-headline-lg">
-            Shared via Clipsense
+            Shared via Clipvalley
           </h1>
         </header>
 
@@ -102,18 +103,20 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
               Want instant sync across devices?
             </h2>
             <p className="mx-auto mt-3 max-w-md text-body-md text-on-surface-variant">
-              Stop emailing links to yourself. Get Clipsense to share text and images between every
+              Stop emailing links to yourself. Get Clipvalley to share text and images between every
               device you sign in on.
             </p>
             <Link
               href="/"
               className="mt-6 inline-flex h-12 items-center gap-2 rounded-lg border border-primary px-6 text-label-md font-semibold text-primary transition-colors duration-200 hover:bg-primary/8"
             >
-              Get Clipsense
+              Get Clipvalley
               <Icon name="arrow_forward" size={18} />
             </Link>
           </section>
         </main>
+
+        <SiteFooter className="mt-20" />
       </div>
     </ToastProvider>
   );

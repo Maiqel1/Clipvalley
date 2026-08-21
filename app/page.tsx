@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Reveal } from "@/components/reveal";
+import { SiteFooter } from "@/components/site-footer";
 
 const STEPS: { icon: IconName; title: string; body: string }[] = [
   {
@@ -45,7 +46,7 @@ export default async function LandingPage() {
       <header className="mx-auto flex w-full max-w-(--container-max) items-center justify-between px-margin-mobile py-6 md:px-margin-desktop">
         <span className="flex items-center gap-3">
           <Image src="/logo.png" alt="" width={36} height={36} className="size-9 object-contain" />
-          <span className="text-headline-md text-primary">Clipsense</span>
+          <span className="text-headline-md text-primary">Clipvalley</span>
         </span>
         <Link
           href="/login"
@@ -115,11 +116,7 @@ export default async function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-outline-variant/20 py-6">
-        <p className="mx-auto max-w-(--container-max) px-margin-mobile text-label-sm text-on-surface-variant md:px-margin-desktop">
-          Clipsense — 2-way clipboard sync.
-        </p>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

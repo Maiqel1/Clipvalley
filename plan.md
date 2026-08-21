@@ -1,4 +1,4 @@
-# Clipsense — Product Plan
+# Clipvalley — Product Plan
 
 ## Overview
 2-way clipboard web app. Paste text or an image on one device, log in on another, copy it back. Content shown as cards. Optional public share link per item.

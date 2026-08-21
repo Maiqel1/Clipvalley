@@ -41,9 +41,15 @@ export async function copyImage(url: string) {
   await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
 }
 
-export async function downloadImage(url: string, filename: string) {
-  const res = await fetch(url);
-  const blob = await res.blob();
+export function canShareFiles() {
+  return (
+    typeof navigator !== "undefined" &&
+    typeof navigator.share === "function" &&
+    typeof navigator.canShare === "function"
+  );
+}
+
+function triggerDownload(blob: Blob, filename: string) {
   const objectUrl = URL.createObjectURL(blob);
 
   const anchor = document.createElement("a");
@@ -54,4 +60,28 @@ export async function downloadImage(url: string, filename: string) {
   anchor.remove();
 
   URL.revokeObjectURL(objectUrl);
+}
+
+export async function downloadImage(url: string, filename: string) {
+  const res = await fetch(url);
+  triggerDownload(await res.blob(), filename);
+}
+
+// Mobile browsers largely cannot write images to the clipboard, so route them
+// to the native share sheet instead and fall back to a plain download.
+export async function saveImage(url: string, filename: string) {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  const file = new File([blob], filename, { type: blob.type || "image/png" });
+
+  if (canShareFiles() && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] });
+      return;
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
+    }
+  }
+
+  triggerDownload(blob, filename);
 }

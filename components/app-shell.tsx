@@ -36,7 +36,7 @@ export function AppShell({ username, syncState, onNewClip, children }: AppShellP
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-outline-variant/30 bg-surface-container-low p-6 shadow-level-1 md:flex">
         <Link href="/dashboard" className="mb-8 flex items-center gap-3">
           <Image src="/logo.png" alt="" width={40} height={40} className="size-10 object-contain" />
-          <span className="text-headline-md text-primary">Clipsense</span>
+          <span className="text-headline-md text-primary">Clipvalley</span>
         </Link>
 
         <Button size="md" className="mb-6 w-full" onClick={newClip}>
@@ -92,7 +92,7 @@ export function AppShell({ username, syncState, onNewClip, children }: AppShellP
           <div className="mx-auto flex h-16 w-full max-w-(--container-max) items-center justify-between px-margin-mobile md:px-margin-desktop">
             <Link href="/dashboard" className="flex items-center gap-3 md:hidden">
               <Image src="/logo.png" alt="" width={32} height={32} className="size-8 object-contain" />
-              <span className="text-headline-md text-primary">Clipsense</span>
+              <span className="text-headline-md text-primary">Clipvalley</span>
             </Link>
             <span className="hidden md:block" />
 

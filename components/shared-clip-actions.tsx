@@ -1,7 +1,7 @@
 "use client";
 
-import { copyImage, copyText, downloadImage } from "@/lib/clipboard";
-import { useCanCopyImages } from "@/lib/use-capabilities";
+import { copyImage, copyText, saveImage } from "@/lib/clipboard";
+import { useCanCopyImages, useCanShareFiles } from "@/lib/use-capabilities";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -15,33 +15,43 @@ type SharedClipActionsProps = {
 
 export function SharedClipActions({ type, content, imageUrl, clipId }: SharedClipActionsProps) {
   const canCopy = useCanCopyImages();
+  const canShare = useCanShareFiles();
 
-  if (type === "image" && !canCopy) {
+  if (type === "text") {
     return (
-      <Button
-        size="lg"
-        className="mt-6 w-full"
-        disabled={!imageUrl}
-        onClick={() => imageUrl && downloadImage(imageUrl, `clipsense-${clipId.slice(0, 8)}.png`)}
-      >
-        <Icon name="download" size={20} />
-        Download image
-      </Button>
+      <CopyButton
+        className="mt-6 h-14 w-full bg-primary text-on-primary hover:bg-primary hover:brightness-110"
+        label="Copy to Clipboard"
+        onCopy={() => copyText(content)}
+      />
     );
   }
 
+  const filename = `clipvalley-${clipId.slice(0, 8)}.png`;
+
   return (
-    <CopyButton
-      className="mt-6 h-14 w-full bg-primary text-on-primary hover:bg-primary hover:brightness-110"
-      label={type === "image" ? "Copy image" : "Copy to Clipboard"}
-      onCopy={async () => {
-        if (type === "image") {
-          if (!imageUrl) throw new Error("Image not ready");
-          await copyImage(imageUrl);
-        } else {
-          await copyText(content);
-        }
-      }}
-    />
+    <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+      {canCopy && (
+        <CopyButton
+          className="h-14 flex-1 bg-primary text-on-primary hover:bg-primary hover:brightness-110"
+          label="Copy image"
+          errorMessage="Could not copy the image. Use Save instead."
+          onCopy={async () => {
+            if (!imageUrl) throw new Error("Image not ready");
+            await copyImage(imageUrl);
+          }}
+        />
+      )}
+      <Button
+        size="lg"
+        variant={canCopy ? "secondary" : "primary"}
+        className={canCopy ? "h-14 flex-1" : "h-14 w-full"}
+        disabled={!imageUrl}
+        onClick={() => imageUrl && saveImage(imageUrl, filename)}
+      >
+        <Icon name="download" size={20} />
+        {canShare ? "Save image" : "Download image"}
+      </Button>
+    </div>
   );
 }

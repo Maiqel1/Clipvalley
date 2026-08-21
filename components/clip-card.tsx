@@ -5,8 +5,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/cn";
 import { duration, easeOutQuart, layoutSpring, shakeReject } from "@/lib/motion";
 import { detectLink } from "@/lib/detect-link";
-import { copyImage, copyText, downloadImage } from "@/lib/clipboard";
-import { useCanCopyImages } from "@/lib/use-capabilities";
+import { copyImage, copyText, saveImage } from "@/lib/clipboard";
+import { useCanCopyImages, useCanShareFiles } from "@/lib/use-capabilities";
 import type { ClipboardItem } from "@/lib/supabase/types";
 import { Icon } from "@/components/ui/icon";
 import { Chip } from "@/components/ui/chip";
@@ -48,6 +48,7 @@ export function ClipCard({
   const [shareOpen, setShareOpen] = React.useState(false);
   const [sharePending, setSharePending] = React.useState(false);
   const [confirmingDelete, setConfirmingDelete] = React.useState(false);
+  const canCopyImages = useCanCopyImages();
 
   const link = clip.type === "text" ? detectLink(clip.content) : null;
   const pending = status === "pending";
@@ -233,7 +234,12 @@ export function ClipCard({
               </a>
             )}
             {clip.type === "image" && (
-              <ImageSecondaryAction url={imageUrl} clipId={clip.id} />
+              <ImageSecondaryAction
+                url={imageUrl}
+                clipId={clip.id}
+                path={clip.content}
+                onRefresh={onRefreshImage}
+              />
             )}
 
             <div
@@ -257,15 +263,22 @@ export function ClipCard({
               >
                 <Icon name="delete" size={18} />
               </IconButton>
-              <CopyButton
-                variant="solid"
-                className="h-9 px-3 text-label-sm"
-                label={clip.type === "image" ? "Copy Image" : link ? "Copy URL" : "Copy"}
-                onCopy={async () => {
-                  if (clip.type === "image") await resolveImageUrl();
-                  else await copyText(clip.content);
-                }}
-              />
+              {(clip.type !== "image" || canCopyImages) && (
+                <CopyButton
+                  variant="solid"
+                  className="h-9 px-3 text-label-sm"
+                  label={clip.type === "image" ? "Copy Image" : link ? "Copy URL" : "Copy"}
+                  errorMessage={
+                    clip.type === "image"
+                      ? "Could not copy the image. Use Save instead."
+                      : "Could not copy that."
+                  }
+                  onCopy={async () => {
+                    if (clip.type === "image") await resolveImageUrl();
+                    else await copyText(clip.content);
+                  }}
+                />
+              )}
             </div>
           </>
         )}
@@ -381,20 +394,34 @@ function LinkBody({ host, title, url }: { host: string; title: string; url: stri
   );
 }
 
-function ImageSecondaryAction({ url, clipId }: { url?: string; clipId: string }) {
-  const supported = useCanCopyImages();
+function ImageSecondaryAction({
+  url,
+  clipId,
+  onRefresh,
+  path,
+}: {
+  url?: string;
+  clipId: string;
+  path: string;
+  onRefresh: (path: string) => Promise<string | null>;
+}) {
+  const canShare = useCanShareFiles();
 
-  if (supported) return <span />;
+  async function save() {
+    const filename = `clipvalley-${clipId.slice(0, 8)}.png`;
+    if (!url) return;
+    try {
+      await saveImage(url, filename);
+    } catch {
+      const fresh = await onRefresh(path);
+      if (fresh) await saveImage(fresh, filename);
+    }
+  }
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      disabled={!url}
-      onClick={() => url && downloadImage(url, `clipsense-${clipId.slice(0, 8)}.png`)}
-    >
+    <Button variant="ghost" size="sm" disabled={!url} onClick={save}>
       <Icon name="download" size={18} />
-      Download
+      {canShare ? "Save" : "Download"}
     </Button>
   );
 }
