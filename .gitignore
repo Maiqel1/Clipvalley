@@ -42,3 +42,4 @@ yarn-error.log*
 next-env.d.ts
 docs/
 stitch_clipsense_clipboard_sync/
+plan.md
