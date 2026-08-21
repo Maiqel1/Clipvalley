@@ -35,9 +35,9 @@ function loadGis() {
 export function GoogleButton({ next }: { next?: string }) {
   const router = useRouter();
   const target = React.useRef<HTMLDivElement>(null);
-  const [status, setStatus] = React.useState<"loading" | "ready" | "signing-in" | "unavailable">(
-    CLIENT_ID ? "loading" : "unavailable",
-  );
+  const [status, setStatus] = React.useState<
+    "loading" | "ready" | "signing-in" | "blocked" | "unconfigured"
+  >(CLIENT_ID ? "loading" : "unconfigured");
   const [error, setError] = React.useState<string | null>(null);
 
   const destination = next?.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
@@ -93,7 +93,7 @@ export function GoogleButton({ next }: { next?: string }) {
 
         setStatus("ready");
       } catch {
-        if (!cancelled) setStatus("unavailable");
+        if (!cancelled) setStatus("blocked");
       }
     }
 
@@ -103,10 +103,24 @@ export function GoogleButton({ next }: { next?: string }) {
     };
   }, [destination, router]);
 
-  if (status === "unavailable") {
+  if (status === "unconfigured") {
+    if (process.env.NODE_ENV === "development") {
+      return (
+        <p className="rounded-lg bg-error-container px-4 py-3 text-body-sm text-on-error-container">
+          <strong>NEXT_PUBLIC_GOOGLE_CLIENT_ID is not set.</strong> Add it to{" "}
+          <code>.env.local</code> and restart the dev server. Google sign-in is disabled until you
+          do.
+        </p>
+      );
+    }
+    return null;
+  }
+
+  if (status === "blocked") {
     return (
       <p className="text-center text-body-sm text-on-surface-variant">
-        Google sign-in isn&apos;t available in this browser. Use your email and password above.
+        Google sign-in couldn&apos;t load — an extension or privacy setting is blocking it. Use your
+        email and password above.
       </p>
     );
   }
