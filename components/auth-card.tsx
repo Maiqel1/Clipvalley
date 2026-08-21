@@ -119,12 +119,12 @@ export function AuthCard({
               <form action={loginAction} className="flex flex-col gap-4">
                 <input type="hidden" name="next" value={next ?? "/dashboard"} />
                 <Field
-                  label="Email Address"
-                  icon="mail"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="you@example.com"
+                  label="Email or username"
+                  icon="person"
+                  name="identifier"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="you@example.com or yourname"
                   required
                 />
                 <PasswordField

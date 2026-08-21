@@ -5,8 +5,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/cn";
 import { duration, easeOutQuart, layoutSpring, shakeReject } from "@/lib/motion";
 import { detectLink } from "@/lib/detect-link";
-import { copyImage, copyText, saveImage } from "@/lib/clipboard";
-import { useCanCopyImages, useCanShareFiles } from "@/lib/use-capabilities";
+import { copyImage, copyText, downloadImage } from "@/lib/clipboard";
+import { useCanCopyImages } from "@/lib/use-capabilities";
 import type { ClipboardItem } from "@/lib/supabase/types";
 import { Icon } from "@/components/ui/icon";
 import { Chip } from "@/components/ui/chip";
@@ -16,6 +16,7 @@ import { CopyButton } from "@/components/copy-button";
 import { RelativeTime } from "@/components/relative-time";
 import { ShareDialog } from "@/components/share-dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { ClipViewer } from "@/components/clip-viewer";
 
 export type ClipStatus = "saved" | "pending" | "failed";
 
@@ -48,6 +49,7 @@ export function ClipCard({
   const [shareOpen, setShareOpen] = React.useState(false);
   const [sharePending, setSharePending] = React.useState(false);
   const [confirmingDelete, setConfirmingDelete] = React.useState(false);
+  const [viewing, setViewing] = React.useState(false);
   const canCopyImages = useCanCopyImages();
 
   const link = clip.type === "text" ? detectLink(clip.content) : null;
@@ -173,7 +175,12 @@ export function ClipCard({
             className="h-full"
           />
         ) : clip.type === "image" ? (
-          <ImageBody url={imageUrl} path={clip.content} onRefresh={onRefreshImage} />
+          <ImageBody
+            url={imageUrl}
+            path={clip.content}
+            onRefresh={onRefreshImage}
+            onOpen={() => setViewing(true)}
+          />
         ) : link ? (
           <LinkBody host={link.host} title={link.title} url={link.url} />
         ) : (
@@ -248,6 +255,9 @@ export function ClipCard({
                 "md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100",
               )}
             >
+              <IconButton label="Open clip" onClick={() => setViewing(true)}>
+                <Icon name="visibility" size={18} />
+              </IconButton>
               <IconButton
                 label={clip.is_public ? "Sharing on" : "Share clip"}
                 tone={clip.is_public ? "primary" : "default"}
@@ -265,12 +275,12 @@ export function ClipCard({
               </IconButton>
               {(clip.type !== "image" || canCopyImages) && (
                 <CopyButton
-                  variant="solid"
-                  className="h-9 px-3 text-label-sm"
-                  label={clip.type === "image" ? "Copy Image" : link ? "Copy URL" : "Copy"}
+                  variant="icon"
+                  className="bg-primary text-on-primary hover:bg-primary hover:brightness-110"
+                  label={clip.type === "image" ? "Copy image" : link ? "Copy URL" : "Copy text"}
                   errorMessage={
                     clip.type === "image"
-                      ? "Could not copy the image. Use Save instead."
+                      ? "Could not copy the image. Use Download instead."
                       : "Could not copy that."
                   }
                   onCopy={async () => {
@@ -294,6 +304,13 @@ export function ClipCard({
           void setShared(false);
           setShareOpen(false);
         }}
+      />
+
+      <ClipViewer
+        open={viewing}
+        onClose={() => setViewing(false)}
+        clip={clip}
+        imageUrl={imageUrl}
       />
 
       <ConfirmDialog
@@ -345,10 +362,12 @@ function ImageBody({
   url,
   path,
   onRefresh,
+  onOpen,
 }: {
   url?: string;
   path: string;
   onRefresh: (path: string) => Promise<string | null>;
+  onOpen: () => void;
 }) {
   const [refreshed, setRefreshed] = React.useState<{ path: string; url: string } | null>(null);
   const src = refreshed?.path === path ? refreshed.url : url;
@@ -362,13 +381,20 @@ function ImageBody({
   return (
     <div className="relative h-32 overflow-hidden rounded-md border border-outline-variant/20 bg-surface-container-low">
       {src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={src}
-          alt=""
-          onError={handleError}
-          className="size-full object-cover opacity-90 transition-opacity duration-300 group-hover:opacity-100"
-        />
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-label="Open image"
+          className="block size-full cursor-zoom-in"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt=""
+            onError={handleError}
+            className="size-full object-cover opacity-90 transition-opacity duration-300 group-hover:opacity-100"
+          />
+        </button>
       ) : (
         <div className="grid size-full place-items-center text-on-surface-variant">
           <Icon name="image" size={28} />
@@ -405,23 +431,21 @@ function ImageSecondaryAction({
   path: string;
   onRefresh: (path: string) => Promise<string | null>;
 }) {
-  const canShare = useCanShareFiles();
-
   async function save() {
     const filename = `clipvalley-${clipId.slice(0, 8)}.png`;
     if (!url) return;
     try {
-      await saveImage(url, filename);
+      await downloadImage(url, filename);
     } catch {
       const fresh = await onRefresh(path);
-      if (fresh) await saveImage(fresh, filename);
+      if (fresh) await downloadImage(fresh, filename);
     }
   }
 
   return (
     <Button variant="ghost" size="sm" disabled={!url} onClick={save}>
       <Icon name="download" size={18} />
-      {canShare ? "Save" : "Download"}
+      Download
     </Button>
   );
 }

@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { AuthState } from "./types";
 
 const USERNAME_RE = /^[A-Za-z0-9_]{3,24}$/;
@@ -11,21 +12,53 @@ function safeNext(value: FormDataEntryValue | null) {
   return next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
 }
 
+// Usernames may contain "_", which is a LIKE wildcard, so the ilike result is
+// re-checked in JS for exact case-insensitive equality before it is trusted.
+async function emailForIdentifier(identifier: string): Promise<string | null> {
+  if (identifier.includes("@")) return identifier;
+  if (!/^[A-Za-z0-9_]{3,24}$/.test(identifier)) return null;
+
+  const admin = createAdminClient();
+
+  const { data: candidates } = await admin
+    .from("profiles")
+    .select("id, username")
+    .ilike("username", identifier)
+    .limit(5);
+
+  const match = candidates?.find(
+    (row) => row.username?.toLowerCase() === identifier.toLowerCase(),
+  );
+  if (!match) return null;
+
+  const { data } = await admin.auth.admin.getUserById(match.id);
+  return data.user?.email ?? null;
+}
+
 export async function signIn(_prev: AuthState, formData: FormData): Promise<AuthState> {
-  const email = String(formData.get("email") ?? "").trim();
+  const identifier = String(formData.get("identifier") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const next = safeNext(formData.get("next"));
 
-  if (!email || !password) {
-    return { error: "Enter your email and password.", notice: null };
+  if (!identifier || !password) {
+    return { error: "Enter your email or username, and your password.", notice: null };
   }
+
+  const email = await emailForIdentifier(identifier);
+
+  // Same message whether the account is missing or the password is wrong, so
+  // this cannot be used to enumerate usernames.
+  const rejected: AuthState = {
+    error: "That doesn't match an account. Check your details and try again.",
+    notice: null,
+  };
+
+  if (!email) return rejected;
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error) {
-    return { error: "That email and password don't match an account.", notice: null };
-  }
+  if (error) return rejected;
 
   redirect(next);
 }

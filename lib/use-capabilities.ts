@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { canCopyImages, canShareFiles } from "./clipboard";
+import { canCopyImages } from "./clipboard";
 
 const noopSubscribe = () => () => {};
 
@@ -25,10 +25,6 @@ export function useIsDesktop() {
     () => window.matchMedia("(min-width: 768px)").matches,
     () => false,
   );
-}
-
-export function useCanShareFiles() {
-  return useSyncExternalStore(noopSubscribe, canShareFiles, () => false);
 }
 
 export function useCanCopyImages() {

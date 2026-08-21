@@ -5,7 +5,7 @@ import { motion, type HTMLMotionProps } from "motion/react";
 import { cn } from "@/lib/cn";
 import { snappy } from "@/lib/motion";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger" | "destructive";
+type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger" | "destructive";
 type Size = "sm" | "md" | "lg";
 
 const VARIANTS: Record<Variant, string> = {
@@ -13,6 +13,8 @@ const VARIANTS: Record<Variant, string> = {
     "bg-primary text-on-primary shadow-level-1 hover:brightness-110 disabled:hover:brightness-100",
   secondary:
     "bg-secondary-container text-on-surface hover:bg-primary-container/15",
+  outline:
+    "border-2 border-primary bg-transparent text-primary hover:bg-primary/8",
   ghost:
     "bg-transparent text-on-surface-variant hover:bg-primary/8 hover:text-primary",
   danger:
@@ -24,7 +26,7 @@ const VARIANTS: Record<Variant, string> = {
 const SIZES: Record<Size, string> = {
   sm: "h-9 px-3 text-label-sm gap-1.5",
   md: "h-11 px-4 text-label-md gap-2",
-  lg: "h-14 px-6 text-label-md gap-2",
+  lg: "h-14 px-6 text-[1rem] font-semibold gap-2.5",
 };
 
 export type ButtonProps = Omit<HTMLMotionProps<"button">, "children"> & {

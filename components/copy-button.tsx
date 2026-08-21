@@ -44,7 +44,7 @@ export function CopyButton({
     } catch (error) {
       toast(
         error instanceof Error && error.message === "UNSUPPORTED"
-          ? "This browser can't copy images. Use Save instead."
+          ? "This browser can't copy images. Use Download instead."
           : errorMessage,
         "error",
       );
@@ -61,7 +61,7 @@ export function CopyButton({
       title={isIcon ? label : undefined}
       whileTap={{ scale: isIcon ? 0.92 : 0.98 }}
       transition={snappy}
-      animate={copied ? { backgroundColor: "rgba(99, 14, 212, 0.14)" } : {}}
+      animate={copied && !isIcon ? { backgroundColor: "rgba(99, 14, 212, 0.14)" } : {}}
       className={cn(
         "relative inline-flex items-center justify-center gap-2 font-semibold",
         "transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
