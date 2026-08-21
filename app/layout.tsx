@@ -51,6 +51,9 @@ export const metadata: Metadata = {
   },
   description:
     "Paste text or an image on one device, sign in on another, copy it back. No pairing, no cables.",
+  verification: {
+    google: "TSRruGAR7le1R3zEZuhfoXHr3XSzL-Tb83thF4gLYE8",
+  },
 };
 
 export const viewport: Viewport = {
