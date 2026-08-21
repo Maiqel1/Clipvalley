@@ -1,0 +1,120 @@
+import { notFound } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import type { Metadata } from "next";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { detectLink } from "@/lib/detect-link";
+import { SIGNED_URL_TTL } from "@/lib/actions/types";
+import { Chip } from "@/components/ui/chip";
+import { Icon } from "@/components/ui/icon";
+import { ToastProvider } from "@/components/ui/toast";
+import { SharedClipActions } from "@/components/shared-clip-actions";
+
+export const metadata: Metadata = {
+  title: "Shared clip",
+  robots: { index: false, follow: false },
+};
+
+export default async function SharePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+
+  if (!/^[a-z0-9]{6,32}$/.test(slug)) notFound();
+
+  const supabase = createAdminClient();
+
+  const { data: clip } = await supabase
+    .from("clipboard_items")
+    .select("id, type, content, created_at")
+    .eq("share_slug", slug)
+    .eq("is_public", true)
+    .maybeSingle();
+
+  if (!clip) notFound();
+
+  let imageUrl: string | null = null;
+  if (clip.type === "image") {
+    const { data } = await supabase.storage
+      .from("clipboard-images")
+      .createSignedUrl(clip.content, SIGNED_URL_TTL);
+    imageUrl = data?.signedUrl ?? null;
+  }
+
+  const link = clip.type === "text" ? detectLink(clip.content) : null;
+
+  return (
+    <ToastProvider>
+      <div className="relative flex min-h-screen flex-col px-margin-mobile py-10 md:px-margin-desktop">
+        <div className="ambient-bg" />
+
+        <header className="mx-auto mb-10 flex w-full max-w-2xl items-center gap-4">
+          <Image src="/logo.png" alt="" width={44} height={44} className="size-11 object-contain" />
+          <h1 className="text-headline-md text-on-surface md:text-headline-lg">
+            Shared via Clipsense
+          </h1>
+        </header>
+
+        <main className="mx-auto w-full max-w-2xl">
+          <article className="rounded-xl border border-outline-variant/20 bg-surface-container-lowest p-6 shadow-level-1 md:p-8">
+            <div className="mb-6 flex items-center justify-between gap-3">
+              {clip.type === "image" ? (
+                <Chip icon="image" tone="tertiary">
+                  Image
+                </Chip>
+              ) : link ? (
+                <Chip icon="link" tone="primary">
+                  Link
+                </Chip>
+              ) : (
+                <Chip icon="subject">Text Snippet</Chip>
+              )}
+              <Chip tone="primary">Read-only</Chip>
+            </div>
+
+            {clip.type === "image" ? (
+              imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={imageUrl}
+                  alt=""
+                  className="w-full rounded-md border border-outline-variant/20 object-contain"
+                />
+              ) : (
+                <p className="rounded-md bg-surface-container-low p-6 text-body-md text-on-surface-variant">
+                  This image is no longer available.
+                </p>
+              )
+            ) : (
+              <pre className="max-h-[60vh] overflow-auto rounded-md bg-surface-container-low p-5 font-sans text-body-md break-words whitespace-pre-wrap text-on-surface">
+                {clip.content}
+              </pre>
+            )}
+
+            <SharedClipActions
+              type={clip.type}
+              content={clip.content}
+              imageUrl={imageUrl}
+              clipId={clip.id}
+            />
+          </article>
+
+          <section className="mt-16 text-center">
+            <h2 className="text-headline-md text-on-surface md:text-headline-lg">
+              Want instant sync across devices?
+            </h2>
+            <p className="mx-auto mt-3 max-w-md text-body-md text-on-surface-variant">
+              Stop emailing links to yourself. Get Clipsense to share text and images between every
+              device you sign in on.
+            </p>
+            <Link
+              href="/"
+              className="mt-6 inline-flex h-12 items-center gap-2 rounded-lg border border-primary px-6 text-label-md font-semibold text-primary transition-colors duration-200 hover:bg-primary/8"
+            >
+              Get Clipsense
+              <Icon name="arrow_forward" size={18} />
+            </Link>
+          </section>
+        </main>
+      </div>
+    </ToastProvider>
+  );
+}
