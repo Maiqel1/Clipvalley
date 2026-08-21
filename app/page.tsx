@@ -101,7 +101,7 @@ export default async function LandingPage() {
           </Reveal>
         </section>
 
-        <section className="grid gap-gutter pb-24 md:grid-cols-3">
+        <section className="grid gap-gutter pb-16 md:grid-cols-3">
           {STEPS.map((step, index) => (
             <Reveal key={step.title} index={index} whileInView>
               <div className="h-full rounded-xl border border-outline-variant/20 bg-surface-container-lowest p-6 shadow-level-1">
@@ -114,6 +114,47 @@ export default async function LandingPage() {
             </Reveal>
           ))}
         </section>
+
+        <Reveal whileInView>
+          <section className="mx-auto max-w-3xl pb-24">
+            <div className="rounded-xl border border-outline-variant/20 bg-surface-container-lowest p-6 shadow-level-1 md:p-8">
+              <h2 className="text-headline-md text-on-surface">What Clipvalley does</h2>
+              <p className="mt-3 text-body-md text-on-surface-variant">
+                Clipvalley is a personal clipboard that syncs across your devices. You paste text or
+                an image into your dashboard, and it becomes a card saved to your account. Sign in on
+                a different device and the same cards are there, ready to copy back. Sync is tied to
+                your account rather than your hardware, so there is no pairing step, no device list,
+                and no cable. You can also turn any single clip into a public read-only link, and
+                switch that link off again at any time.
+              </p>
+
+              <h2 className="mt-8 text-headline-md text-on-surface">
+                Why Clipvalley asks for your Google account
+              </h2>
+              <p className="mt-3 text-body-md text-on-surface-variant">
+                Signing in with Google is optional — you can use an email address and password
+                instead. If you do choose Google, Clipvalley requests only your email address and
+                basic profile information, and uses them for one purpose: to create your account and
+                recognise you when you sign in again. Your email address is what links your clips
+                together across devices.
+              </p>
+              <p className="mt-3 text-body-md text-on-surface-variant">
+                Clipvalley never requests access to Gmail, Drive, Contacts, Calendar, or any other
+                Google service, and cannot read or change anything in your Google account. We do not
+                sell your data, show advertising, or run analytics or tracking cookies. Full detail
+                is in our{" "}
+                <Link className="text-primary hover:underline" href="/privacy">
+                  Privacy Policy
+                </Link>{" "}
+                and{" "}
+                <Link className="text-primary hover:underline" href="/terms">
+                  Terms of Service
+                </Link>
+                .
+              </p>
+            </div>
+          </section>
+        </Reveal>
       </main>
 
       <SiteFooter />
