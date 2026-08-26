@@ -24,8 +24,13 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ ok: true });
     response.cookies.set({ ...sessionCookieOptions(), value: cookie });
     return response;
-  } catch {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  } catch (error) {
+    console.error("/api/session failed", error);
+    const detail = error instanceof Error ? error.message : String(error);
+    return NextResponse.json(
+      { error: "Could not start your session.", detail },
+      { status: 401 },
+    );
   }
 }
 
