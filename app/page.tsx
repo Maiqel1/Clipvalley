@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { currentUser } from "@/lib/firebase/session";
+import { cookies } from "next/headers";
+import { SESSION_COOKIE } from "@/lib/firebase/session-cookie";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Reveal } from "@/components/reveal";
 import { SiteFooter } from "@/components/site-footer";
@@ -25,15 +26,11 @@ const STEPS: { icon: IconName; title: string; body: string }[] = [
 ];
 
 export default async function LandingPage() {
-  let signedIn = false;
-
-  try {
-    signedIn = Boolean(await currentUser());
-  } catch {
-    signedIn = false;
-  }
-
-  if (signedIn) redirect("/dashboard");
+  // Presence check only — this page just bounces signed-in visitors onward, and
+  // importing firebase-admin here would pull the Admin SDK into a page that
+  // needs none of it. /dashboard verifies for real.
+  const store = await cookies();
+  if (store.get(SESSION_COOKIE)?.value) redirect("/dashboard");
 
   return (
     <div className="relative flex min-h-screen flex-col">
