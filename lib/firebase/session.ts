@@ -1,11 +1,9 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { adminAuth } from "./admin";
+import { SESSION_COOKIE, SESSION_MAX_AGE } from "./session-cookie";
 
-export const SESSION_COOKIE = "clipvalley_session";
-
-// 14 days is Firebase's hard maximum for a session cookie.
-export const SESSION_MAX_AGE = 60 * 60 * 24 * 14;
+export { SESSION_COOKIE, SESSION_MAX_AGE, sessionCookieOptions } from "./session-cookie";
 
 // Re-mint once past halfway so an active user is never signed out.
 export const SESSION_REFRESH_AFTER = SESSION_MAX_AGE / 2;
@@ -15,17 +13,6 @@ export type SessionUser = {
   email: string | null;
   issuedAt: number;
 };
-
-export function sessionCookieOptions() {
-  return {
-    name: SESSION_COOKIE,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const,
-    path: "/",
-    maxAge: SESSION_MAX_AGE,
-  };
-}
 
 export async function createSessionCookie(idToken: string) {
   return adminAuth().createSessionCookie(idToken, { expiresIn: SESSION_MAX_AGE * 1000 });
