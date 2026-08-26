@@ -5,7 +5,7 @@ const PUBLIC_PATHS = ["/", "/login", "/s", "/privacy", "/terms"];
 
 // These authenticate their own payload and are how a session is created, so
 // guarding them behind a session cookie makes sign-in impossible.
-const AUTH_ENDPOINTS = ["/api/session", "/api/login", "/api/signup", "/api/health"];
+const AUTH_ENDPOINTS = ["/api/session", "/api/login", "/api/signup"];
 
 function isPublic(pathname: string) {
   if (AUTH_ENDPOINTS.includes(pathname)) return true;
