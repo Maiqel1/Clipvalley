@@ -2,43 +2,41 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { findSharedClip } from "@/lib/data/clips";
 import { detectLink } from "@/lib/detect-link";
-import { SIGNED_URL_TTL } from "@/lib/actions/types";
 import { Chip } from "@/components/ui/chip";
 import { Icon } from "@/components/ui/icon";
 import { ToastProvider } from "@/components/ui/toast";
 import { SharedClipActions } from "@/components/shared-clip-actions";
 import { SiteFooter } from "@/components/site-footer";
 
-export const metadata: Metadata = {
-  title: "Shared clip",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  if (!/^[a-z0-9]{6,32}$/.test(slug)) return { title: "Shared clip" };
+
+  const shared = await findSharedClip(slug);
+
+  return {
+    title: shared?.clip.title?.trim() || "Shared clip",
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function SharePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
   if (!/^[a-z0-9]{6,32}$/.test(slug)) notFound();
 
-  const supabase = createAdminClient();
+  // Admin SDK read, by slug. There is no client-reachable read path to another
+  // user's clip, so public slugs cannot be enumerated.
+  const shared = await findSharedClip(slug);
+  if (!shared) notFound();
 
-  const { data: clip } = await supabase
-    .from("clipboard_items")
-    .select("id, type, content, created_at")
-    .eq("share_slug", slug)
-    .eq("is_public", true)
-    .maybeSingle();
-
-  if (!clip) notFound();
-
-  let imageUrl: string | null = null;
-  if (clip.type === "image") {
-    const { data } = await supabase.storage
-      .from("clipboard-images")
-      .createSignedUrl(clip.content, SIGNED_URL_TTL);
-    imageUrl = data?.signedUrl ?? null;
-  }
+  const { clip, imageUrl } = shared;
 
   const link = clip.type === "text" ? detectLink(clip.content) : null;
 
@@ -70,6 +68,10 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
               )}
               <Chip tone="primary">Read-only</Chip>
             </div>
+
+            {clip.title && (
+              <h2 className="mb-4 text-headline-md break-words text-on-surface">{clip.title}</h2>
+            )}
 
             {clip.type === "image" ? (
               imageUrl ? (

@@ -3,7 +3,7 @@
 import { copyImage, copyText, downloadImage } from "@/lib/clipboard";
 import { detectLink } from "@/lib/detect-link";
 import { useCanCopyImages } from "@/lib/use-capabilities";
-import type { ClipboardItem } from "@/lib/supabase/types";
+import type { ClipboardItem } from "@/lib/firebase/types";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -21,13 +21,13 @@ export function ClipViewer({ open, onClose, clip, imageUrl }: ClipViewerProps) {
   const link = clip.type === "text" ? detectLink(clip.content) : null;
   const filename = `clipvalley-${clip.id.slice(0, 8)}.png`;
 
-  const title = clip.type === "image" ? "Image" : link ? "Link" : "Text clip";
+  const heading = clip.title?.trim() || (clip.type === "image" ? "Image" : link ? "Link" : "Text clip");
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      title={title}
+      title={heading}
       className="md:w-[min(48rem,calc(100vw-3rem))]"
       footer={
         clip.type === "image" ? (

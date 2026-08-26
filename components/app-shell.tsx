@@ -11,6 +11,7 @@ import { Icon, type IconName } from "@/components/ui/icon";
 import { Button, IconButton } from "@/components/ui/button";
 import { signOut } from "@/lib/actions/auth";
 import { SyncChip, type SyncState } from "@/components/sync-chip";
+import { NavPending } from "@/components/nav-pending";
 
 type NavItem = { href: string; label: string; icon: IconName };
 
@@ -67,9 +68,10 @@ export function AppShell({ username, syncState, onNewClip, children }: AppShellP
                     transition={{ type: "spring", stiffness: 420, damping: 34 }}
                   />
                 )}
-                <span className="relative flex items-center gap-3">
+                <span className="relative flex flex-1 items-center gap-3">
                   <Icon name={item.icon} size={20} filled={active} />
                   {item.label}
+                  <NavPending className="ml-auto" />
                 </span>
               </Link>
             );
@@ -144,11 +146,12 @@ export function AppShell({ username, syncState, onNewClip, children }: AppShellP
               </motion.span>
               <span
                 className={cn(
-                  "text-label-sm transition-colors duration-200",
+                  "flex items-center gap-1.5 text-label-sm transition-colors duration-200",
                   active ? "text-primary" : "text-on-surface-variant",
                 )}
               >
                 {item.label === "Recent Clips" ? "Clips" : item.label}
+                <NavPending />
               </span>
             </Link>
           );

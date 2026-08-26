@@ -13,8 +13,8 @@ npm install
 npm run dev
 ```
 
-Requires a Supabase project — see [`docs/SUPABASE_SETUP.md`](docs/SUPABASE_SETUP.md). Copy `.env.local.example` to `.env.local` and fill in the values.
+Requires a Firebase project — see [`docs/FIREBASE_SETUP.md`](docs/FIREBASE_SETUP.md). Copy `.env.local.example` to `.env.local` and fill in the values.
 
 ## Built with
 
-Next.js · React · TypeScript · Tailwind CSS · Motion · Supabase
+Next.js · React · TypeScript · Tailwind CSS · Motion · Firebase

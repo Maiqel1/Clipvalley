@@ -4,8 +4,8 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { signIn, signUp } from "@/lib/actions/auth";
-import { emptyAuthState } from "@/lib/actions/types";
+import { useRouter } from "next/navigation";
+import { signInWithPassword, signUpWithPassword } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/input";
 import { Icon } from "@/components/ui/icon";
@@ -34,8 +34,32 @@ export function AuthCard({
   const [tab, setTab] = React.useState<Tab>(initialTab);
   const [direction, setDirection] = React.useState(0);
 
-  const [loginState, loginAction, loginPending] = React.useActionState(signIn, emptyAuthState);
-  const [signupState, signupAction, signupPending] = React.useActionState(signUp, emptyAuthState);
+  const router = useRouter();
+  const [loginPending, setLoginPending] = React.useState(false);
+  const [signupPending, setSignupPending] = React.useState(false);
+  const [formError, setFormError] = React.useState<string | null>(null);
+
+  const destination = next?.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+
+  async function submit(
+    event: React.FormEvent<HTMLFormElement>,
+    setPending: (value: boolean) => void,
+    run: (data: FormData) => Promise<void>,
+  ) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    setPending(true);
+    setFormError(null);
+
+    try {
+      await run(data);
+      router.push(destination);
+      router.refresh();
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Something went wrong. Try again.");
+      setPending(false);
+    }
+  }
 
   function switchTab(nextTab: Tab) {
     if (nextTab === tab) return;
@@ -47,12 +71,8 @@ export function AuthCard({
     window.history.replaceState(null, "", url);
   }
 
-  const active = tab === "login" ? loginState : signupState;
   const linkError = error ? (ERROR_COPY[error] ?? "Something went wrong. Please try again.") : null;
-  const state = {
-    error: active.error ?? linkError,
-    notice: active.notice,
-  };
+  const state = { error: formError ?? linkError, notice: null as string | null };
 
   return (
     <main className="z-10 mx-auto w-full max-w-md">
@@ -116,7 +136,17 @@ export function AuthCard({
             transition={{ duration: duration.fast, ease: easeOutQuart }}
           >
             {tab === "login" ? (
-              <form action={loginAction} className="flex flex-col gap-4">
+              <form
+                onSubmit={(e) =>
+                  submit(e, setLoginPending, (data) =>
+                    signInWithPassword(
+                      String(data.get("identifier") ?? ""),
+                      String(data.get("password") ?? ""),
+                    ),
+                  )
+                }
+                className="flex flex-col gap-4"
+              >
                 <input type="hidden" name="next" value={next ?? "/dashboard"} />
                 <Field
                   label="Email or username"
@@ -139,7 +169,18 @@ export function AuthCard({
                 </Button>
               </form>
             ) : (
-              <form action={signupAction} className="flex flex-col gap-4">
+              <form
+                onSubmit={(e) =>
+                  submit(e, setSignupPending, (data) =>
+                    signUpWithPassword(
+                      String(data.get("username") ?? ""),
+                      String(data.get("email") ?? ""),
+                      String(data.get("password") ?? ""),
+                    ),
+                  )
+                }
+                className="flex flex-col gap-4"
+              >
                 <Field
                   label="Username"
                   icon="person"

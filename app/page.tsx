@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { currentUser } from "@/lib/firebase/session";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Reveal } from "@/components/reveal";
 import { SiteFooter } from "@/components/site-footer";
@@ -28,11 +28,7 @@ export default async function LandingPage() {
   let signedIn = false;
 
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    signedIn = Boolean(user);
+    signedIn = Boolean(await currentUser());
   } catch {
     signedIn = false;
   }

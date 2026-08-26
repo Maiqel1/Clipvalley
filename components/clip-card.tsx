@@ -7,11 +7,11 @@ import { duration, easeOutQuart, layoutSpring, shakeReject } from "@/lib/motion"
 import { detectLink } from "@/lib/detect-link";
 import { copyImage, copyText, downloadImage } from "@/lib/clipboard";
 import { useCanCopyImages } from "@/lib/use-capabilities";
-import type { ClipboardItem } from "@/lib/supabase/types";
+import type { ClipboardItem } from "@/lib/firebase/types";
 import { Icon } from "@/components/ui/icon";
 import { Chip } from "@/components/ui/chip";
 import { Button, IconButton } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/input";
+import { Field, Textarea } from "@/components/ui/input";
 import { CopyButton } from "@/components/copy-button";
 import { RelativeTime } from "@/components/relative-time";
 import { ShareDialog } from "@/components/share-dialog";
@@ -26,7 +26,8 @@ export type ClipCardProps = {
   imageUrl?: string;
   status?: ClipStatus;
   onDelete: (id: string) => void;
-  onEdit: (id: string, content: string) => Promise<void>;
+  onEdit: (id: string, content: string, title?: string) => Promise<void>;
+  onRename: (id: string, title: string) => Promise<void>;
   onShareChange: (id: string, shared: boolean) => Promise<string | null>;
   onRefreshImage: (path: string) => Promise<string | null>;
   onRetry?: (id: string) => void;
@@ -39,12 +40,14 @@ export function ClipCard({
   status = "saved",
   onDelete,
   onEdit,
+  onRename,
   onShareChange,
   onRefreshImage,
   onRetry,
 }: ClipCardProps) {
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(clip.content);
+  const [titleDraft, setTitleDraft] = React.useState(clip.title ?? "");
   const [saving, setSaving] = React.useState(false);
   const [shareOpen, setShareOpen] = React.useState(false);
   const [sharePending, setSharePending] = React.useState(false);
@@ -62,12 +65,16 @@ export function ClipCard({
       : null;
 
   async function commitEdit() {
-    if (draft.trim() === clip.content.trim()) {
+    const titleChanged = (titleDraft.trim() || null) !== (clip.title ?? null);
+    const contentChanged = clip.type !== "image" && draft.trim() !== clip.content.trim();
+
+    if (!contentChanged && !titleChanged) {
       setEditing(false);
       return;
     }
     setSaving(true);
-    await onEdit(clip.id, draft);
+    if (clip.type === "image") await onRename(clip.id, titleDraft);
+    else await onEdit(clip.id, draft, titleDraft);
     setSaving(false);
     setEditing(false);
   }
@@ -131,6 +138,12 @@ export function ClipCard({
         />
       )}
 
+      {clip.title && !editing && (
+        <h3 className="mb-2 truncate text-label-md font-semibold text-on-surface" title={clip.title}>
+          {clip.title}
+        </h3>
+      )}
+
       <header className="mb-4 flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
           {clip.type === "image" ? (
@@ -160,20 +173,42 @@ export function ClipCard({
 
       <div className="min-h-32 flex-1">
         {editing ? (
-          <Textarea
-            value={draft}
-            autoFocus
-            rows={5}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                setDraft(clip.content);
-                setEditing(false);
-              }
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void commitEdit();
-            }}
-            className="h-full"
-          />
+          <>
+            <div className="mb-3">
+              <Field
+                label="Title"
+                hint="Optional"
+                icon="subject"
+                value={titleDraft}
+                maxLength={80}
+                placeholder="Name this clip"
+                onChange={(e) => setTitleDraft(e.target.value)}
+              />
+            </div>
+            {clip.type === "image" ? (
+              <ImageBody
+                url={imageUrl}
+                path={clip.content}
+                onRefresh={onRefreshImage}
+                onOpen={() => setViewing(true)}
+              />
+            ) : (
+              <Textarea
+                value={draft}
+                autoFocus
+                rows={5}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setDraft(clip.content);
+                    setTitleDraft(clip.title ?? "");
+                    setEditing(false);
+                  }
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void commitEdit();
+                }}
+              />
+            )}
+          </>
         ) : clip.type === "image" ? (
           <ImageBody
             url={imageUrl}
@@ -198,6 +233,7 @@ export function ClipCard({
               size="sm"
               onClick={() => {
                 setDraft(clip.content);
+                setTitleDraft(clip.title ?? "");
                 setEditing(false);
               }}
             >
@@ -223,30 +259,26 @@ export function ClipCard({
           </>
         ) : (
           <>
-            {clip.type === "text" && !link && (
-              <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
-                <Icon name="edit" size={18} />
-                Edit
-              </Button>
-            )}
-            {link && (
+            {link ? (
               <a
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-label-sm font-semibold text-on-surface-variant transition-colors duration-200 hover:bg-primary/8 hover:text-primary"
+                aria-label="Open link"
+                title="Open link"
+                className="grid size-10 place-items-center rounded-full text-on-surface-variant transition-colors duration-200 hover:bg-primary/10 hover:text-primary"
               >
                 <Icon name="open_in_new" size={18} />
-                Open
               </a>
-            )}
-            {clip.type === "image" && (
+            ) : clip.type === "image" ? (
               <ImageSecondaryAction
                 url={imageUrl}
                 clipId={clip.id}
                 path={clip.content}
                 onRefresh={onRefreshImage}
               />
+            ) : (
+              <span />
             )}
 
             <div
@@ -255,6 +287,12 @@ export function ClipCard({
                 "md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100",
               )}
             >
+              <IconButton
+                label={clip.type === "image" ? "Rename clip" : "Edit clip"}
+                onClick={() => setEditing(true)}
+              >
+                <Icon name="edit" size={18} />
+              </IconButton>
               <IconButton label="Open clip" onClick={() => setViewing(true)}>
                 <Icon name="visibility" size={18} />
               </IconButton>

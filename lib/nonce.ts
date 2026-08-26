@@ -1,5 +1,6 @@
-// Supabase compares the ID token's nonce claim against SHA-256 of what we pass
-// it, so Google gets the hash and signInWithIdToken gets the raw value.
+// Google receives the SHA-256 hash so it can bind the ID token to this request.
+// Firebase verifies the token signature rather than the nonce, so only the
+// hashed value is ever used.
 export async function createNonce() {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);

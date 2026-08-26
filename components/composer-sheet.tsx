@@ -4,23 +4,25 @@ import * as React from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/input";
+import { Field, Textarea } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 
 type ComposerSheetProps = {
   open: boolean;
   onClose: () => void;
-  onSubmitText: (value: string) => void;
-  onSubmitImage: (file: File) => void;
+  onSubmitText: (value: string, title: string) => void;
+  onSubmitImage: (file: File, title: string) => void;
 };
 
 export function ComposerSheet({ open, onClose, onSubmitText, onSubmitImage }: ComposerSheetProps) {
   const [value, setValue] = React.useState("");
+  const [title, setTitle] = React.useState("");
   const fileInput = React.useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const close = React.useCallback(() => {
     setValue("");
+    setTitle("");
     onClose();
   }, [onClose]);
 
@@ -36,7 +38,7 @@ export function ComposerSheet({ open, onClose, onSubmitText, onSubmitImage }: Co
 
   function submit() {
     if (!value.trim()) return;
-    onSubmitText(value);
+    onSubmitText(value, title);
     close();
   }
 
@@ -62,6 +64,19 @@ export function ComposerSheet({ open, onClose, onSubmitText, onSubmitImage }: Co
           </>
         }
       >
+        <div className="mb-4">
+          <Field
+            label="Title"
+            hint="Optional"
+            icon="subject"
+            name="title"
+            value={title}
+            maxLength={80}
+            placeholder="Name this clip"
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </div>
+
         <Textarea
           data-autofocus
           rows={6}
@@ -83,7 +98,7 @@ export function ComposerSheet({ open, onClose, onSubmitText, onSubmitImage }: Co
           const file = event.target.files?.[0];
           event.target.value = "";
           if (file) {
-            onSubmitImage(file);
+            onSubmitImage(file, title);
             close();
           }
         }}

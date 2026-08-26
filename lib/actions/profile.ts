@@ -1,8 +1,10 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { FieldValue } from "firebase-admin/firestore";
+import { adminAuth, adminDb } from "@/lib/firebase/admin";
+import { requireUser } from "@/lib/firebase/session";
+import { PROFILES, USERNAMES } from "@/lib/firebase/paths";
 import type { ProfileState } from "./types";
 
 const USERNAME_RE = /^[A-Za-z0-9_]{3,24}$/;
@@ -20,25 +22,36 @@ export async function updateUsername(
     };
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const user = await requireUser();
+  const db = adminDb();
+  const profileRef = db.collection(PROFILES).doc(user.uid);
+  const current = (await profileRef.get()).get("username") as string | null;
 
-  const { data: current } = await supabase
-    .from("profiles")
-    .select("username")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (current?.username?.toLowerCase() !== username.toLowerCase()) {
-    const { data: available } = await supabase.rpc("username_available", { candidate: username });
-    if (!available) return { error: `"${username}" is already taken.`, notice: null };
+  if (current?.toLowerCase() === username.toLowerCase()) {
+    await profileRef.update({ username });
+    revalidatePath("/dashboard/settings");
+    return { error: null, notice: "Username updated." };
   }
 
-  const { error } = await supabase.from("profiles").update({ username }).eq("id", user.id);
-  if (error) return { error: "Could not save that username.", notice: null };
+  const nextLock = db.collection(USERNAMES).doc(username.toLowerCase());
+
+  try {
+    // Claim the new lock and release the old one atomically, so a crash can
+    // never leave the username orphaned or double-held.
+    await db.runTransaction(async (tx) => {
+      const existing = await tx.get(nextLock);
+      if (existing.exists) throw new Error("TAKEN");
+
+      tx.set(nextLock, { uid: user.uid, createdAt: FieldValue.serverTimestamp() });
+      if (current) tx.delete(db.collection(USERNAMES).doc(current.toLowerCase()));
+      tx.update(profileRef, { username });
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "TAKEN") {
+      return { error: `"${username}" is already taken.`, notice: null };
+    }
+    return { error: "Could not save that username.", notice: null };
+  }
 
   revalidatePath("/dashboard/settings");
   return { error: null, notice: "Username updated." };
@@ -54,14 +67,15 @@ export async function updatePassword(
   if (password.length < 8) return { error: "Passwords need at least 8 characters.", notice: null };
   if (password !== confirm) return { error: "Those passwords don't match.", notice: null };
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.updateUser({ password });
-  if (error) return { error: error.message, notice: null };
+  const user = await requireUser();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) await supabase.from("profiles").update({ has_password: true }).eq("id", user.id);
+  try {
+    await adminAuth().updateUser(user.uid, { password });
+    await adminDb().collection(PROFILES).doc(user.uid).update({ hasPassword: true });
+  } catch {
+    return { error: "Could not update your password.", notice: null };
+  }
 
+  revalidatePath("/dashboard/settings");
   return { error: null, notice: "Password updated." };
 }

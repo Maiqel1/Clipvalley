@@ -1,4 +1,4 @@
-import type { ClipboardItem } from "@/lib/supabase/types";
+import type { ClipboardItem } from "@/lib/firebase/types";
 
 export const MAX_TEXT_LENGTH = 100_000;
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;

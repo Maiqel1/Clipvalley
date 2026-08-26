@@ -1,3 +1,4 @@
+import { SessionKeeper } from "@/components/session-keeper";
 import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
@@ -71,6 +72,7 @@ export default function RootLayout({
         <link rel="stylesheet" href={MATERIAL_SYMBOLS_HREF} />
       </head>
       <body className="min-h-screen bg-background font-sans text-on-background">
+        <SessionKeeper />
         {children}
       </body>
     </html>

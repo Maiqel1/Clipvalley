@@ -86,8 +86,8 @@ export default function PrivacyPage() {
         <List
           items={[
             <>
-              <strong className="text-on-surface">Supabase</strong> — database, file storage, and
-              authentication.
+              <strong className="text-on-surface">Google Firebase</strong> — database, file
+              storage, and authentication.
             </>,
             <>
               <strong className="text-on-surface">Vercel</strong> — application hosting and delivery.

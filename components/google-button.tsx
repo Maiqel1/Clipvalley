@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
+import { clientAuth } from "@/lib/firebase/client";
+import { completeGoogleSignIn } from "@/lib/auth-client";
 import { createNonce } from "@/lib/nonce";
 import { Spinner } from "@/components/ui/button";
 
@@ -52,7 +54,7 @@ export function GoogleButton({ next }: { next?: string }) {
         await loadGis();
         if (cancelled) return;
 
-        const { raw, hashed } = await createNonce();
+        const { hashed } = await createNonce();
         if (cancelled || !target.current || !window.google) return;
 
         window.google.accounts.id.initialize({
@@ -63,14 +65,15 @@ export function GoogleButton({ next }: { next?: string }) {
             setStatus("signing-in");
             setError(null);
 
-            const supabase = createClient();
-            const { error: signInError } = await supabase.auth.signInWithIdToken({
-              provider: "google",
-              token: credential,
-              nonce: raw,
-            });
-
-            if (signInError) {
+            try {
+              // Firebase verifies the token signature itself; the GIS nonce
+              // still guards against replay on Google's side.
+              const result = await signInWithCredential(
+                clientAuth(),
+                GoogleAuthProvider.credential(credential),
+              );
+              await completeGoogleSignIn(result);
+            } catch {
               setError("Google sign-in didn't complete. Please try again.");
               setStatus("ready");
               return;

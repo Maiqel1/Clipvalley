@@ -2,17 +2,19 @@
 
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { createClient } from "@/lib/supabase/client";
+import { ref, uploadBytes } from "firebase/storage";
+import { clientStorage } from "@/lib/firebase/client";
 import {
   createImageClip,
   createTextClip,
   deleteClip,
   refreshImageUrl,
   setClipShared,
+  updateClipTitle,
   updateTextClip,
 } from "@/lib/actions/clips";
 import { MAX_IMAGE_BYTES } from "@/lib/actions/types";
-import type { ClipboardItem } from "@/lib/supabase/types";
+import type { ClipboardItem } from "@/lib/firebase/types";
 import { duration, easeOutQuart, fadeUp } from "@/lib/motion";
 import { AppShell } from "@/components/app-shell";
 import { ClipCard, ClipGrid, type ClipStatus } from "@/components/clip-card";
@@ -38,6 +40,7 @@ function tempClip(partial: Partial<ClipboardItem> & Pick<ClipboardItem, "type" |
     user_id: "",
     is_public: false,
     share_slug: null,
+    title: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     ...partial,
@@ -72,14 +75,19 @@ export function ClipsBoard({
   }, []);
 
   const addText = React.useCallback(
-    async (raw: string) => {
+    async (raw: string, title?: string) => {
       const value = raw.trim();
       if (!value) return;
 
-      const optimistic = tempClip({ type: "text", content: value, user_id: userId });
+      const optimistic = tempClip({
+        type: "text",
+        content: value,
+        user_id: userId,
+        title: title?.trim() || null,
+      });
       setEntries((prev) => [{ clip: optimistic, status: "pending" }, ...prev]);
 
-      const result = await track(() => createTextClip(value));
+      const result = await track(() => createTextClip(value, title));
 
       setEntries((prev) =>
         prev.map((entry) =>
@@ -102,7 +110,7 @@ export function ClipsBoard({
   );
 
   const addImage = React.useCallback(
-    async (file: File) => {
+    async (file: File, title?: string) => {
       if (!file.type.startsWith("image/")) {
         toast("That file isn't an image.", "error");
         return;
@@ -116,18 +124,24 @@ export function ClipsBoard({
       const path = `${userId}/${crypto.randomUUID()}.${extension}`;
       const previewUrl = URL.createObjectURL(file);
 
-      const optimistic = tempClip({ type: "image", content: path, user_id: userId });
+      const optimistic = tempClip({
+        type: "image",
+        content: path,
+        user_id: userId,
+        title: title?.trim() || null,
+      });
       setImageUrls((prev) => ({ ...prev, [path]: previewUrl }));
       setEntries((prev) => [{ clip: optimistic, status: "pending" }, ...prev]);
 
       const result = await track(async () => {
-        const supabase = createClient();
-        const upload = await supabase.storage
-          .from("clipboard-images")
-          .upload(path, file, { contentType: file.type, upsert: false });
-
-        if (upload.error) return { ok: false as const, error: "Upload failed." };
-        return createImageClip(path);
+        try {
+          // Straight from the browser: Storage rules authorise the write against
+          // the {uid}/ prefix, and a 5 MB file would blow the server-action body limit.
+          await uploadBytes(ref(clientStorage(), path), file, { contentType: file.type });
+        } catch {
+          return { ok: false as const, error: "Upload failed." };
+        }
+        return createImageClip(path, title);
       });
 
       setEntries((prev) =>
@@ -235,8 +249,21 @@ export function ClipsBoard({
     }
   }
 
-  async function handleEdit(id: string, content: string) {
-    const result = await track(() => updateTextClip(id, content));
+  // Images have no editable content, so renaming goes through its own action
+  // rather than updateTextClip, which rejects non-text clips.
+  async function handleRename(id: string, title: string) {
+    const result = await track(() => updateClipTitle(id, title));
+    if (!result.ok) {
+      toast(result.error, "error");
+      return;
+    }
+    setEntries((prev) =>
+      prev.map((entry) => (entry.clip.id === id ? { clip: result.clip, status: "saved" } : entry)),
+    );
+  }
+
+  async function handleEdit(id: string, content: string, title?: string) {
+    const result = await track(() => updateTextClip(id, content, title));
     if (result.ok) {
       setEntries((prev) =>
         prev.map((entry) => (entry.clip.id === id ? { clip: result.clip, status: "saved" } : entry)),
@@ -290,6 +317,7 @@ export function ClipsBoard({
                 imageUrl={imageUrls[entry.clip.content]}
                 onDelete={handleDelete}
                 onEdit={handleEdit}
+                onRename={handleRename}
                 onShareChange={handleShareChange}
                 onRefreshImage={handleRefreshImage}
               />
@@ -301,8 +329,8 @@ export function ClipsBoard({
       <ComposerSheet
         open={composerOpen}
         onClose={() => setComposerOpen(false)}
-        onSubmitText={(value) => void addText(value)}
-        onSubmitImage={(file) => void addImage(file)}
+        onSubmitText={(value, title) => void addText(value, title)}
+        onSubmitImage={(file, title) => void addImage(file, title)}
       />
 
       <BookmarkPrompt />
