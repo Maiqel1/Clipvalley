@@ -1,7 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { adminAuth } from "@/lib/firebase/admin";
-import { createSessionCookie, sessionCookieOptions, SESSION_COOKIE } from "@/lib/firebase/session";
-import { ensureProfile } from "@/lib/actions/profile-bootstrap";
+import { sessionCookieOptions } from "@/lib/firebase/session-cookie";
 
 export async function POST(request: NextRequest) {
   const { idToken } = (await request.json().catch(() => ({}))) as { idToken?: string };
@@ -11,6 +9,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const [{ adminAuth }, { createSessionCookie }, { ensureProfile }] = await Promise.all([
+      import("@/lib/firebase/admin"),
+      import("@/lib/firebase/session"),
+      import("@/lib/actions/profile-bootstrap"),
+    ]);
+
     const decoded = await adminAuth().verifyIdToken(idToken, true);
 
     // Replaces the old handle_new_user Postgres trigger; no Cloud Function needed.
@@ -30,5 +34,3 @@ export async function DELETE() {
   response.cookies.set({ ...sessionCookieOptions(), value: "", maxAge: 0 });
   return response;
 }
-
-export { SESSION_COOKIE };
