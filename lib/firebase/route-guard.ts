@@ -17,14 +17,24 @@ function isPublic(pathname: string) {
 }
 
 export async function guard(request: NextRequest) {
-  if (!isFirebaseConfigured) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("Firebase env vars are not set. See docs/FIREBASE_SETUP.md");
-    }
-    return NextResponse.next({ request });
-  }
-
   const { pathname } = request.nextUrl;
+
+  // Misconfiguration must not take down pages that need no backend at all.
+  // Public routes still render; anything requiring a session goes to /login,
+  // which surfaces the problem without 500-ing the whole site.
+  if (!isFirebaseConfigured) {
+    console.error(
+      "Firebase environment variables are not set. See docs/FIREBASE_SETUP.md — " +
+        "signed-in routes are unavailable until they are configured.",
+    );
+
+    if (isPublic(pathname)) return NextResponse.next({ request });
+
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("next", pathname);
+    return NextResponse.redirect(url);
+  }
   const cookie = request.cookies.get(SESSION_COOKIE)?.value;
   const user = cookie ? await verifySessionCookie(cookie) : null;
 
