@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { signInWithPassword, signUpWithPassword } from "@/lib/auth-client";
+import { requestPasswordReset, signInWithPassword, signUpWithPassword } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/input";
 import { Icon } from "@/components/ui/icon";
@@ -13,7 +13,8 @@ import { GoogleButton } from "@/components/google-button";
 import { cn } from "@/lib/cn";
 import { duration, easeOutQuart, fadeUp } from "@/lib/motion";
 
-type Tab = "login" | "signup";
+// "reset" is a view rather than a tab — the tablist stays two items.
+type Tab = "login" | "signup" | "reset";
 
 const ERROR_COPY: Record<string, string> = {
   oauth_failed: "Google sign-in didn't complete. Please try again.",
@@ -37,7 +38,9 @@ export function AuthCard({
   const router = useRouter();
   const [loginPending, setLoginPending] = React.useState(false);
   const [signupPending, setSignupPending] = React.useState(false);
+  const [resetPending, setResetPending] = React.useState(false);
   const [formError, setFormError] = React.useState<string | null>(null);
+  const [notice, setNotice] = React.useState<string | null>(null);
 
   const destination = next?.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
 
@@ -61,18 +64,38 @@ export function AuthCard({
     }
   }
 
+  // Reset never redirects — it stays put and shows a confirmation, so it does
+  // not go through submit().
+  async function handleReset(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const email = String(new FormData(event.currentTarget).get("email") ?? "").trim();
+    if (!email) return;
+
+    setResetPending(true);
+    setFormError(null);
+
+    await requestPasswordReset(email);
+
+    setResetPending(false);
+    // Identical wording whether or not the address has an account, so this
+    // cannot be used to discover who is registered.
+    setNotice("If an account exists for that address, a reset link is on its way.");
+  }
+
   function switchTab(nextTab: Tab) {
     if (nextTab === tab) return;
     setDirection(nextTab === "signup" ? 1 : -1);
     setTab(nextTab);
+    setFormError(null);
+    setNotice(null);
     const url = new URL(window.location.href);
-    if (nextTab === "signup") url.searchParams.set("tab", "signup");
-    else url.searchParams.delete("tab");
+    if (nextTab === "login") url.searchParams.delete("tab");
+    else url.searchParams.set("tab", nextTab);
     window.history.replaceState(null, "", url);
   }
 
   const linkError = error ? (ERROR_COPY[error] ?? "Something went wrong. Please try again.") : null;
-  const state = { error: formError ?? linkError, notice: null as string | null };
+  const state = { error: formError ?? linkError, notice };
 
   return (
     <main className="z-10 mx-auto w-full max-w-md">
@@ -102,6 +125,14 @@ export function AuthCard({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: duration.slow, ease: easeOutQuart, delay: 0.08 }}
       >
+        {tab === "reset" ? (
+          <div className="mb-8">
+            <h2 className="text-headline-md text-on-surface">Reset your password</h2>
+            <p className="mt-1 text-body-sm text-on-surface-variant">
+              Enter your email and we&apos;ll send you a link to set a new one.
+            </p>
+          </div>
+        ) : (
         <div role="tablist" className="relative mb-8 flex border-b border-outline-variant/30">
           {(["login", "signup"] as const).map((value) => (
             <button
@@ -126,6 +157,7 @@ export function AuthCard({
             </button>
           ))}
         </div>
+        )}
 
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
@@ -135,7 +167,31 @@ export function AuthCard({
             exit={{ opacity: 0, x: direction * -8 }}
             transition={{ duration: duration.fast, ease: easeOutQuart }}
           >
-            {tab === "login" ? (
+            {tab === "reset" ? (
+              <form onSubmit={handleReset} className="flex flex-col gap-4">
+                <Field
+                  label="Email Address"
+                  icon="mail"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  required
+                />
+                <Button type="submit" size="lg" loading={resetPending} className="mt-2">
+                  Send reset link
+                  <Icon name="arrow_forward" size={18} />
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => switchTab("login")}
+                  className="mt-1 inline-flex items-center justify-center gap-1.5 text-label-md font-semibold text-on-surface-variant transition-colors duration-200 hover:text-primary"
+                >
+                  <Icon name="arrow_back" size={18} />
+                  Back to sign in
+                </button>
+              </form>
+            ) : tab === "login" ? (
               <form
                 onSubmit={(e) =>
                   submit(e, setLoginPending, (data) =>
@@ -162,6 +218,15 @@ export function AuthCard({
                   name="password"
                   autoComplete="current-password"
                   placeholder="Your password"
+                  hint={
+                    <button
+                      type="button"
+                      onClick={() => switchTab("reset")}
+                      className="text-label-sm font-semibold text-primary hover:underline"
+                    >
+                      Forgot password?
+                    </button>
+                  }
                 />
                 <Button type="submit" size="lg" loading={loginPending} className="mt-2">
                   Log In

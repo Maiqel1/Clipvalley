@@ -13,7 +13,11 @@ export default async function LoginPage({
   return (
     <div className="relative flex min-h-screen items-center justify-center p-margin-mobile md:p-margin-desktop">
       <div className="ambient-bg" />
-      <AuthCard initialTab={tab === "signup" ? "signup" : "login"} next={next} error={error} />
+      <AuthCard
+        initialTab={tab === "signup" || tab === "reset" ? tab : "login"}
+        next={next}
+        error={error}
+      />
     </div>
   );
 }

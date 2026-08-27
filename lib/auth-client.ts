@@ -1,6 +1,11 @@
 "use client";
 
-import { signInWithCustomToken, signOut as fbSignOut, type UserCredential } from "firebase/auth";
+import {
+  sendPasswordResetEmail,
+  signInWithCustomToken,
+  signOut as fbSignOut,
+  type UserCredential,
+} from "firebase/auth";
 import { clientAuth } from "@/lib/firebase/client";
 
 async function mintSessionCookie(credential: UserCredential) {
@@ -53,6 +58,25 @@ export async function signUpWithPassword(username: string, email: string, passwo
 
 export async function completeGoogleSignIn(credential: UserCredential) {
   await mintSessionCookie(credential);
+}
+
+// Never throws and never reports whether the address has an account — the
+// caller shows one confirmation either way, so this cannot be used to
+// enumerate users.
+export async function requestPasswordReset(email: string) {
+  // Creates a password provider first where one is missing, otherwise Firebase
+  // sends nothing to accounts that only ever signed in with Google.
+  await fetch("/api/reset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  }).catch(() => {});
+
+  try {
+    await sendPasswordResetEmail(clientAuth(), email);
+  } catch {
+    // auth/user-not-found and friends are swallowed deliberately.
+  }
 }
 
 export async function signOutEverywhere() {
