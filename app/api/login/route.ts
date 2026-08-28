@@ -26,13 +26,27 @@ export async function POST(request: NextRequest) {
     const email = await emailForIdentifier(identifier.trim());
     if (!email) return REJECTED.clone();
 
-    const uid = await verifyPassword(email, password);
-    if (!uid) return REJECTED.clone();
+    const verified = await verifyPassword(email, password);
+    if (!verified) return REJECTED.clone();
 
-    // A custom token lets the browser complete sign-in itself, so the client
-    // SDK is authenticated for direct-to-Storage uploads.
-    const customToken = await adminAuth().createCustomToken(uid);
-    return NextResponse.json({ customToken });
+    const { createSessionCookie, sessionCookieOptions } = await import("@/lib/firebase/session");
+    const { ensureProfile } = await import("@/lib/actions/profile-bootstrap");
+
+    await ensureProfile(verified.uid, email);
+
+    // The session cookie is minted here, from the server's own idToken, so
+    // sign-in completes without the browser ever contacting Google. Users whose
+    // network blocks identitytoolkit.googleapis.com can still log in.
+    const cookie = await createSessionCookie(verified.idToken);
+
+    // Still returned so the browser can authenticate its own Firebase SDK,
+    // which direct-to-Storage image uploads need. Best-effort on the client:
+    // if it fails, the user is signed in regardless.
+    const customToken = await adminAuth().createCustomToken(verified.uid);
+
+    const response = NextResponse.json({ customToken });
+    response.cookies.set({ ...sessionCookieOptions(), value: cookie });
+    return response;
   } catch {
     return NextResponse.json({ error: "Something went wrong. Try again." }, { status: 500 });
   }

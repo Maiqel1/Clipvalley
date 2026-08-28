@@ -42,10 +42,17 @@ async function exchange(endpoint: string, body: unknown) {
     throw new Error(data.error ?? "Something went wrong. Try again.");
   }
 
-  // Completing sign-in in the browser leaves the client SDK authenticated,
-  // which the direct-to-Storage image upload depends on.
-  const credential = await signInWithCustomToken(clientAuth(), data.customToken);
-  await mintSessionCookie(credential);
+  // The session cookie is already set by the server, so the user is signed in
+  // at this point. Authenticating the client SDK is only needed for
+  // direct-to-Storage image uploads, so a failure here must not block login —
+  // on networks that block identitytoolkit.googleapis.com this always fails,
+  // and those users should still get in.
+  try {
+    const credential = await signInWithCustomToken(clientAuth(), data.customToken);
+    await mintSessionCookie(credential);
+  } catch {
+    // Signed in via the server cookie; image uploads will not work here.
+  }
 }
 
 export async function signInWithPassword(identifier: string, password: string) {

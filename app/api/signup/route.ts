@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminAuth, adminDb } from "@/lib/firebase/admin";
-import { usernameTaken } from "@/lib/firebase/identity";
+import { usernameTaken, verifyPassword } from "@/lib/firebase/identity";
 import { PROFILES, USERNAMES } from "@/lib/firebase/paths";
 
 const USERNAME_RE = /^[A-Za-z0-9_]{3,24}$/;
@@ -70,5 +70,18 @@ export async function POST(request: NextRequest) {
   }
 
   const customToken = await adminAuth().createCustomToken(uid);
-  return NextResponse.json({ customToken });
+  const response = NextResponse.json({ customToken });
+
+  // Mint the session cookie server-side too, so signing up works on networks
+  // that block identitytoolkit.googleapis.com from the browser.
+  const verified = await verifyPassword(address, password);
+  if (verified) {
+    const { createSessionCookie, sessionCookieOptions } = await import("@/lib/firebase/session");
+    response.cookies.set({
+      ...sessionCookieOptions(),
+      value: await createSessionCookie(verified.idToken),
+    });
+  }
+
+  return response;
 }

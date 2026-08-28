@@ -34,7 +34,15 @@ export async function emailForIdentifier(identifier: string): Promise<string | n
 
 // The Admin SDK cannot verify a password, so this uses the Identity Toolkit
 // REST endpoint server-side. The email never reaches the browser.
-export async function verifyPassword(email: string, password: string): Promise<string | null> {
+//
+// It also returns the idToken, which lets the session cookie be minted entirely
+// on the server — no browser-to-Google call at all. That matters for users whose
+// network blocks identitytoolkit.googleapis.com, where the client SDK fails with
+// auth/network-request-failed and no client-side flow can ever succeed.
+export async function verifyPassword(
+  email: string,
+  password: string,
+): Promise<{ uid: string; idToken: string } | null> {
   const response = await fetch(`${IDENTITY_BASE}:signInWithPassword?key=${apiKey()}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -43,8 +51,10 @@ export async function verifyPassword(email: string, password: string): Promise<s
 
   if (!response.ok) return null;
 
-  const data = (await response.json()) as { localId?: string };
-  return data.localId ?? null;
+  const data = (await response.json()) as { localId?: string; idToken?: string };
+  if (!data.localId || !data.idToken) return null;
+
+  return { uid: data.localId, idToken: data.idToken };
 }
 
 export async function usernameTaken(username: string) {
