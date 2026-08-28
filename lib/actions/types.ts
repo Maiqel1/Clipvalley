@@ -10,5 +10,10 @@ export type ActionResult = { ok: true } | { ok: false; error: string };
 export type AuthState = { error: string | null; notice: string | null };
 export const emptyAuthState: AuthState = { error: null, notice: null };
 
-export type ProfileState = { error: string | null; notice: string | null };
+export type ProfileState = {
+  error: string | null;
+  notice: string | null;
+  // Firebase revokes sessions on password change; this re-establishes one.
+  customToken?: string;
+};
 export const emptyProfileState: ProfileState = { error: null, notice: null };

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { updatePassword, updateUsername } from "@/lib/actions/profile";
+import { reestablishSession } from "@/lib/auth-client";
 import { emptyProfileState, type ProfileState } from "@/lib/actions/types";
 import { signOut } from "@/lib/actions/auth";
 import { cn } from "@/lib/cn";
@@ -23,10 +24,34 @@ export function SettingsView({ username, email, hasPassword }: SettingsViewProps
     updateUsername,
     emptyProfileState,
   );
-  const [passwordState, passwordAction, passwordPending] = React.useActionState(
-    updatePassword,
-    emptyProfileState,
-  );
+  // Not useActionState: the action returns a token the client must exchange
+  // before the revoked session takes the page down with it.
+  const [passwordState, setPasswordState] = React.useState<ProfileState>(emptyProfileState);
+  const [passwordPending, setPasswordPending] = React.useState(false);
+
+  async function handlePasswordSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+
+    setPasswordPending(true);
+    const result = await updatePassword(emptyProfileState, data);
+
+    if (result.customToken) {
+      try {
+        await reestablishSession(result.customToken);
+      } catch {
+        // Session could not be rebuilt — /session-ended clears the dead cookie
+        // rather than letting the page bounce between guard and redirect.
+        window.location.href = "/session-ended?notice=password-updated";
+        return;
+      }
+    }
+
+    setPasswordPending(false);
+    setPasswordState({ error: result.error, notice: result.notice });
+    if (!result.error) form.reset();
+  }
 
   return (
     <AppShell username={username} syncState="idle">
@@ -66,7 +91,7 @@ export function SettingsView({ username, email, hasPassword }: SettingsViewProps
               : "Optional. You signed in with Google, which is all you need — add a password only if you also want to sign in with your email."
           }
         >
-          <form action={passwordAction} className="flex flex-col gap-4">
+          <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-4">
             <Field
               label={hasPassword ? "New password" : "Password"}
               icon="lock"

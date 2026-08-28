@@ -79,6 +79,12 @@ export async function requestPasswordReset(email: string) {
   }
 }
 
+// Rebuilds the session cookie after Firebase revokes it (password change).
+export async function reestablishSession(customToken: string) {
+  const credential = await signInWithCustomToken(clientAuth(), customToken);
+  await mintSessionCookie(credential);
+}
+
 export async function signOutEverywhere() {
   await fbSignOut(clientAuth()).catch(() => {});
   await fetch("/api/session", { method: "DELETE" }).catch(() => {});

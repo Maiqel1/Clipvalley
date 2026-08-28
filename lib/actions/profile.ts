@@ -69,13 +69,20 @@ export async function updatePassword(
 
   const user = await requireUser();
 
+  let customToken: string | undefined;
+
   try {
     await adminAuth().updateUser(user.uid, { password });
     await adminDb().collection(PROFILES).doc(user.uid).update({ hasPassword: true });
+
+    // Firebase revokes every existing session on a password change, which would
+    // otherwise log the user out of the very page they are standing on. Minting
+    // a custom token lets the client rebuild its session immediately.
+    customToken = await adminAuth().createCustomToken(user.uid);
   } catch {
     return { error: "Could not update your password.", notice: null };
   }
 
   revalidatePath("/dashboard/settings");
-  return { error: null, notice: "Password updated." };
+  return { error: null, notice: "Password updated.", customToken };
 }

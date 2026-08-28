@@ -8,7 +8,9 @@ export const metadata: Metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
   const user = await currentUser();
-  if (!user) redirect("/login");
+  // Reaching here means a cookie exists but failed verification, so it has
+  // to be cleared or the proxy will bounce us straight back.
+  if (!user) redirect("/session-ended");
 
   const profile = await profileFor(user.uid);
 
