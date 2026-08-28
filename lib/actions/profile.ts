@@ -83,6 +83,8 @@ export async function updatePassword(
     return { error: "Could not update your password.", notice: null };
   }
 
-  revalidatePath("/dashboard/settings");
+  // Deliberately no revalidatePath here. The password change has just revoked
+  // this session, so re-rendering now would run with a dead cookie and bounce
+  // the user to /login. The client refreshes once it has rebuilt the session.
   return { error: null, notice: "Password updated.", customToken };
 }

@@ -43,6 +43,8 @@ export function SettingsView({ username, email, hasPassword }: SettingsViewProps
     if (result.customToken) {
       try {
         await reestablishSession(result.customToken);
+        // Safe to refresh only now that a valid cookie exists again.
+        router.refresh();
       } catch {
         // Could not rebuild the session — clear the now-dead cookie rather than
         // leaving it to bounce between the guard and the page redirect.
