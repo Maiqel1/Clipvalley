@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { updatePassword, updateUsername } from "@/lib/actions/profile";
-import { reestablishSession } from "@/lib/auth-client";
+import { reestablishSession, signOutEverywhere } from "@/lib/auth-client";
 import { emptyProfileState, type ProfileState } from "@/lib/actions/types";
 import { signOut } from "@/lib/actions/auth";
 import { cn } from "@/lib/cn";
@@ -29,6 +30,8 @@ export function SettingsView({ username, email, hasPassword }: SettingsViewProps
   const [passwordState, setPasswordState] = React.useState<ProfileState>(emptyProfileState);
   const [passwordPending, setPasswordPending] = React.useState(false);
 
+  const router = useRouter();
+
   async function handlePasswordSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -41,9 +44,10 @@ export function SettingsView({ username, email, hasPassword }: SettingsViewProps
       try {
         await reestablishSession(result.customToken);
       } catch {
-        // Session could not be rebuilt — /session-ended clears the dead cookie
-        // rather than letting the page bounce between guard and redirect.
-        window.location.href = "/session-ended?notice=password-updated";
+        // Could not rebuild the session — clear the now-dead cookie rather than
+        // leaving it to bounce between the guard and the page redirect.
+        await signOutEverywhere();
+        router.push("/login?notice=password-updated");
         return;
       }
     }

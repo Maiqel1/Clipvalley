@@ -16,6 +16,10 @@ import { duration, easeOutQuart, fadeUp } from "@/lib/motion";
 // "reset" is a view rather than a tab — the tablist stays two items.
 type Tab = "login" | "signup" | "reset";
 
+const NOTICE_COPY: Record<string, string> = {
+  "password-updated": "Password updated. Please sign in again with your new password.",
+};
+
 const ERROR_COPY: Record<string, string> = {
   oauth_failed: "Google sign-in didn't complete. Please try again.",
   missing_code: "That sign-in link was incomplete. Please try again.",
@@ -27,10 +31,12 @@ export function AuthCard({
   initialTab,
   next,
   error,
+  notice: noticeCode,
 }: {
   initialTab: Tab;
   next?: string;
   error?: string;
+  notice?: string;
 }) {
   const [tab, setTab] = React.useState<Tab>(initialTab);
   const [direction, setDirection] = React.useState(0);
@@ -95,7 +101,8 @@ export function AuthCard({
   }
 
   const linkError = error ? (ERROR_COPY[error] ?? "Something went wrong. Please try again.") : null;
-  const state = { error: formError ?? linkError, notice };
+  const linkNotice = noticeCode ? (NOTICE_COPY[noticeCode] ?? null) : null;
+  const state = { error: formError ?? linkError, notice: notice ?? linkNotice };
 
   return (
     <main className="z-10 mx-auto w-full max-w-md">
