@@ -15,7 +15,7 @@ import {
   updateTextClip,
 } from "@/lib/actions/clips";
 import { MAX_FILE_BYTES, MAX_IMAGE_BYTES } from "@/lib/actions/types";
-import { mergeSnapshot, useClipsSubscription } from "@/lib/use-clips-subscription";
+import { dedupeById, mergeSnapshot, useClipsSubscription } from "@/lib/use-clips-subscription";
 import type { ClipboardItem } from "@/lib/firebase/types";
 import { duration, easeOutQuart, fadeUp } from "@/lib/motion";
 import { AppShell } from "@/components/app-shell";
@@ -119,13 +119,17 @@ export function ClipsBoard({
 
       const result = await track(() => createTextClip(value, title));
 
+      // dedupe: if the listener already delivered this clip under its real id,
+      // rewriting the optimistic row would produce two entries with one key.
       setEntries((prev) =>
-        prev.map((entry) =>
-          entry.clip.id !== optimistic.id
-            ? entry
-            : result.ok
-              ? { clip: result.clip, status: "saved" }
-              : { ...entry, status: "failed" },
+        dedupeById(
+          prev.map((entry) =>
+            entry.clip.id !== optimistic.id
+              ? entry
+              : result.ok
+                ? { clip: result.clip, status: "saved" }
+                : { ...entry, status: "failed" },
+          ),
         ),
       );
 
@@ -174,13 +178,17 @@ export function ClipsBoard({
         return createImageClip(path, title);
       });
 
+      // dedupe: if the listener already delivered this clip under its real id,
+      // rewriting the optimistic row would produce two entries with one key.
       setEntries((prev) =>
-        prev.map((entry) =>
-          entry.clip.id !== optimistic.id
-            ? entry
-            : result.ok
-              ? { clip: result.clip, status: "saved" }
-              : { ...entry, status: "failed" },
+        dedupeById(
+          prev.map((entry) =>
+            entry.clip.id !== optimistic.id
+              ? entry
+              : result.ok
+                ? { clip: result.clip, status: "saved" }
+                : { ...entry, status: "failed" },
+          ),
         ),
       );
 
@@ -298,13 +306,17 @@ export function ClipsBoard({
         return createFileClip(path, file.name, mimeType, file.size, title);
       });
 
+      // dedupe: if the listener already delivered this clip under its real id,
+      // rewriting the optimistic row would produce two entries with one key.
       setEntries((prev) =>
-        prev.map((entry) =>
-          entry.clip.id !== optimistic.id
-            ? entry
-            : result.ok
-              ? { clip: result.clip, status: "saved" }
-              : { ...entry, status: "failed" },
+        dedupeById(
+          prev.map((entry) =>
+            entry.clip.id !== optimistic.id
+              ? entry
+              : result.ok
+                ? { clip: result.clip, status: "saved" }
+                : { ...entry, status: "failed" },
+          ),
         ),
       );
 

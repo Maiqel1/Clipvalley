@@ -94,6 +94,17 @@ export function useClipsSubscription(
   return live;
 }
 
+// Guards against two entries sharing a key. Duplicate keys inside
+// AnimatePresence leave a phantom layout box that only a remount clears.
+export function dedupeById<T extends { clip: ClipboardItem }>(entries: T[]): T[] {
+  const seen = new Set<string>();
+  return entries.filter((entry) => {
+    if (seen.has(entry.clip.id)) return false;
+    seen.add(entry.clip.id);
+    return true;
+  });
+}
+
 // Snapshot rows are authoritative for anything saved. Optimistic rows the
 // server has not acknowledged yet are kept and pinned to the top, otherwise a
 // freshly pasted clip would flicker out and back as the snapshot lands.
@@ -102,10 +113,20 @@ export function mergeSnapshot<T extends { clip: ClipboardItem; status: string }>
   snapshot: ClipboardItem[],
   makeEntry: (clip: ClipboardItem) => T,
 ): T[] {
-  const known = new Set(snapshot.map((clip) => clip.id));
+  const knownIds = new Set(snapshot.map((clip) => clip.id));
+
+  // On a slow connection the listener can beat the server action's response, so
+  // the optimistic row may already be in the snapshot under its real id while
+  // still carrying its temporary one here. Content is the reliable link: a
+  // storage path for uploads, or the exact text just sent.
+  const knownContent = new Set(snapshot.map((clip) => clip.content));
+
   const unacknowledged = previous.filter(
-    (entry) => entry.status !== "saved" && !known.has(entry.clip.id),
+    (entry) =>
+      entry.status !== "saved" &&
+      !knownIds.has(entry.clip.id) &&
+      !knownContent.has(entry.clip.content),
   );
 
-  return [...unacknowledged, ...snapshot.map(makeEntry)];
+  return dedupeById([...unacknowledged, ...snapshot.map(makeEntry)]);
 }
