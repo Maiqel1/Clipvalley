@@ -1,7 +1,8 @@
 import type { ClipboardItem } from "@/lib/firebase/types";
 
 export const MAX_TEXT_LENGTH = 100_000;
-export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 export const SIGNED_URL_TTL = 60 * 60 * 8;
 
 export type ClipResult = { ok: true; clip: ClipboardItem } | { ok: false; error: string };

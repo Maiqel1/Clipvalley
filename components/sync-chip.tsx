@@ -4,10 +4,11 @@ import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/cn";
 import { snappy } from "@/lib/motion";
 
-export type SyncState = "idle" | "pending" | "error";
+export type SyncState = "idle" | "live" | "pending" | "error";
 
 const COPY: Record<SyncState, string> = {
   idle: "Synced",
+  live: "Live",
   pending: "Syncing",
   error: "Not saved",
 };
@@ -26,7 +27,7 @@ export function SyncChip({ state }: { state: SyncState }) {
     >
       <motion.span
         key={state}
-        initial={state === "idle" ? { scale: 0.4 } : false}
+        initial={state === "idle" || state === "live" ? { scale: 0.4 } : false}
         animate={{ scale: 1 }}
         transition={snappy}
         className={cn(

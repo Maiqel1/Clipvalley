@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/cn";
 import { duration, easeOutQuart, layoutSpring, shakeReject } from "@/lib/motion";
 import { detectLink } from "@/lib/detect-link";
-import { copyImage, copyText, downloadImage } from "@/lib/clipboard";
+import { copyImage, copyText, downloadFile, formatBytes } from "@/lib/clipboard";
 import { useCanCopyImages } from "@/lib/use-capabilities";
 import type { ClipboardItem } from "@/lib/firebase/types";
 import { Icon } from "@/components/ui/icon";
@@ -150,6 +150,10 @@ export function ClipCard({
             <Chip icon="image" tone="tertiary">
               Image
             </Chip>
+          ) : clip.type === "file" ? (
+            <Chip icon="description" tone="tertiary">
+              File
+            </Chip>
           ) : link ? (
             <Chip icon="link" tone="primary">
               Link
@@ -216,6 +220,8 @@ export function ClipCard({
             onRefresh={onRefreshImage}
             onOpen={() => setViewing(true)}
           />
+        ) : clip.type === "file" ? (
+          <FileBody name={clip.file_name} mime={clip.mime_type} size={clip.size} />
         ) : link ? (
           <LinkBody host={link.host} title={link.title} url={link.url} />
         ) : (
@@ -270,11 +276,12 @@ export function ClipCard({
               >
                 <Icon name="open_in_new" size={18} />
               </a>
-            ) : clip.type === "image" ? (
+            ) : clip.type !== "text" ? (
               <ImageSecondaryAction
                 url={imageUrl}
                 clipId={clip.id}
                 path={clip.content}
+                fileName={clip.file_name}
                 onRefresh={onRefreshImage}
               />
             ) : (
@@ -311,7 +318,7 @@ export function ClipCard({
               >
                 <Icon name="delete" size={18} />
               </IconButton>
-              {(clip.type !== "image" || canCopyImages) && (
+              {clip.type !== "file" && (clip.type !== "image" || canCopyImages) && (
                 <CopyButton
                   variant="icon"
                   className="bg-primary text-on-primary hover:bg-primary hover:brightness-110"
@@ -458,25 +465,51 @@ function LinkBody({ host, title, url }: { host: string; title: string; url: stri
   );
 }
 
+function FileBody({
+  name,
+  mime,
+  size,
+}: {
+  name: string | null;
+  mime: string | null;
+  size: number | null;
+}) {
+  return (
+    <div className="flex h-32 items-center gap-3 rounded-md border border-outline-variant/20 bg-surface-container-low p-4">
+      <span className="grid size-11 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+        <Icon name="description" size={22} />
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-body-sm font-semibold text-on-surface">{name ?? "File"}</p>
+        <p className="text-label-sm text-on-surface-variant">
+          {[formatBytes(size), mime].filter(Boolean).join(" · ")}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function ImageSecondaryAction({
   url,
   clipId,
   onRefresh,
   path,
+  fileName,
 }: {
   url?: string;
   clipId: string;
   path: string;
+  fileName?: string | null;
   onRefresh: (path: string) => Promise<string | null>;
 }) {
   async function save() {
-    const filename = `clipvalley-${clipId.slice(0, 8)}.png`;
+    const filename = fileName?.trim() || `clipvalley-${clipId.slice(0, 8)}.png`;
     if (!url) return;
     try {
-      await downloadImage(url, filename);
+      await downloadFile(url, filename);
     } catch {
       const fresh = await onRefresh(path);
-      if (fresh) await downloadImage(fresh, filename);
+      if (fresh) await downloadFile(fresh, filename);
     }
   }
 

@@ -54,7 +54,22 @@ function triggerDownload(blob: Blob, filename: string) {
   URL.revokeObjectURL(objectUrl);
 }
 
-export async function downloadImage(url: string, filename: string) {
+export async function downloadFile(url: string, filename: string) {
   const res = await fetch(url);
   triggerDownload(await res.blob(), filename);
+}
+
+export const downloadImage = downloadFile;
+
+export function formatBytes(bytes: number | null) {
+  if (!bytes || bytes < 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ["KB", "MB", "GB"];
+  let value = bytes / 1024;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit++;
+  }
+  return `${value < 10 ? value.toFixed(1) : Math.round(value)} ${units[unit]}`;
 }

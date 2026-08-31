@@ -1,6 +1,6 @@
 "use client";
 
-import { copyImage, copyText, downloadImage } from "@/lib/clipboard";
+import { copyImage, copyText, downloadFile, formatBytes } from "@/lib/clipboard";
 import { detectLink } from "@/lib/detect-link";
 import { useCanCopyImages } from "@/lib/use-capabilities";
 import type { ClipboardItem } from "@/lib/firebase/types";
@@ -19,9 +19,17 @@ type ClipViewerProps = {
 export function ClipViewer({ open, onClose, clip, imageUrl }: ClipViewerProps) {
   const canCopy = useCanCopyImages();
   const link = clip.type === "text" ? detectLink(clip.content) : null;
-  const filename = `clipvalley-${clip.id.slice(0, 8)}.png`;
+  const filename = clip.file_name?.trim() || `clipvalley-${clip.id.slice(0, 8)}.png`;
 
-  const heading = clip.title?.trim() || (clip.type === "image" ? "Image" : link ? "Link" : "Text clip");
+  const heading =
+    clip.title?.trim() ||
+    (clip.type === "image"
+      ? "Image"
+      : clip.type === "file"
+        ? (clip.file_name ?? "File")
+        : link
+          ? "Link"
+          : "Text clip");
 
   return (
     <Dialog
@@ -30,9 +38,9 @@ export function ClipViewer({ open, onClose, clip, imageUrl }: ClipViewerProps) {
       title={heading}
       className="md:w-[min(48rem,calc(100vw-3rem))]"
       footer={
-        clip.type === "image" ? (
+        clip.type !== "text" ? (
           <>
-            {canCopy && (
+            {clip.type === "image" && canCopy && (
               <CopyButton
                 label="Copy image"
                 errorMessage="Could not copy the image. Use Download instead."
@@ -44,9 +52,9 @@ export function ClipViewer({ open, onClose, clip, imageUrl }: ClipViewerProps) {
               />
             )}
             <Button
-              variant={canCopy ? "outline" : "primary"}
+              variant={clip.type === "image" && canCopy ? "outline" : "primary"}
               disabled={!imageUrl}
-              onClick={() => imageUrl && downloadImage(imageUrl, filename)}
+              onClick={() => imageUrl && downloadFile(imageUrl, filename)}
             >
               <Icon name="download" size={18} />
               Download
@@ -74,7 +82,21 @@ export function ClipViewer({ open, onClose, clip, imageUrl }: ClipViewerProps) {
         )
       }
     >
-      {clip.type === "image" ? (
+      {clip.type === "file" ? (
+        <div className="flex items-center gap-4 rounded-lg border border-outline-variant/20 bg-surface-container-low p-6">
+          <span className="grid size-14 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+            <Icon name="description" size={28} />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-body-md font-semibold text-on-surface">
+              {clip.file_name ?? "File"}
+            </p>
+            <p className="text-body-sm text-on-surface-variant">
+              {[formatBytes(clip.size), clip.mime_type].filter(Boolean).join(" · ")}
+            </p>
+          </div>
+        </div>
+      ) : clip.type === "image" ? (
         imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img

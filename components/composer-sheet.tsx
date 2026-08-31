@@ -12,11 +12,19 @@ type ComposerSheetProps = {
   onClose: () => void;
   onSubmitText: (value: string, title: string) => void;
   onSubmitImage: (file: File, title: string) => void;
+  onSubmitFile: (file: File, title: string) => void;
 };
 
-export function ComposerSheet({ open, onClose, onSubmitText, onSubmitImage }: ComposerSheetProps) {
+export function ComposerSheet({
+  open,
+  onClose,
+  onSubmitText,
+  onSubmitImage,
+  onSubmitFile,
+}: ComposerSheetProps) {
   const [value, setValue] = React.useState("");
   const [title, setTitle] = React.useState("");
+  const imageInput = React.useRef<HTMLInputElement>(null);
   const fileInput = React.useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -54,9 +62,13 @@ export function ComposerSheet({ open, onClose, onSubmitText, onSubmitImage }: Co
               <Icon name="content_copy" size={18} />
               Paste from clipboard
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => fileInput.current?.click()}>
+            <Button variant="secondary" size="sm" onClick={() => imageInput.current?.click()}>
               <Icon name="image" size={18} />
               Add image
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => fileInput.current?.click()}>
+              <Icon name="description" size={18} />
+              Add file
             </Button>
             <Button size="sm" className="ml-auto" disabled={!value.trim()} onClick={submit}>
               Save clip
@@ -90,7 +102,7 @@ export function ComposerSheet({ open, onClose, onSubmitText, onSubmitImage }: Co
       </Dialog>
 
       <input
-        ref={fileInput}
+        ref={imageInput}
         type="file"
         accept="image/*"
         hidden
@@ -99,6 +111,20 @@ export function ComposerSheet({ open, onClose, onSubmitText, onSubmitImage }: Co
           event.target.value = "";
           if (file) {
             onSubmitImage(file, title);
+            close();
+          }
+        }}
+      />
+
+      <input
+        ref={fileInput}
+        type="file"
+        hidden
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (file) {
+            onSubmitFile(file, title);
             close();
           }
         }}

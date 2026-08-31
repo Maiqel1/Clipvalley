@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["https://clipvalley.vercel.app", "http://localhost:3000"],
+    "method": ["GET", "HEAD"],
+    "responseHeader": ["Content-Type", "Content-Disposition", "Content-Length"],
+    "maxAgeSeconds": 3600
+  }
+]

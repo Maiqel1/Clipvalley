@@ -18,7 +18,7 @@ export async function listClips(uid: string) {
   const imageUrls: Record<string, string> = {};
   await Promise.all(
     items
-      .filter((c) => c.type === "image")
+      .filter((c) => c.type !== "text")
       .map(async (c) => {
         try {
           const [url] = await adminBucket()
@@ -50,7 +50,7 @@ export async function findSharedClip(slug: string) {
   const clip = toClip(doc.id, doc.data() as ClipDoc);
 
   let imageUrl: string | null = null;
-  if (clip.type === "image") {
+  if (clip.type !== "text") {
     try {
       const [url] = await adminBucket()
         .file(clip.content)

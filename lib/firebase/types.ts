@@ -1,4 +1,4 @@
-export type ClipType = "text" | "image";
+export type ClipType = "text" | "image" | "file";
 
 // The app-facing shape is kept stable so components did not need rewriting when
 // the backend changed; toClip maps Firestore's camelCase docs onto it.
@@ -8,6 +8,10 @@ export type ClipboardItem = {
   type: ClipType;
   content: string;
   title: string | null;
+  // Populated for type === "file"; null for text and image clips.
+  file_name: string | null;
+  mime_type: string | null;
+  size: number | null;
   is_public: boolean;
   share_slug: string | null;
   created_at: string;
@@ -26,6 +30,9 @@ export type ClipDoc = {
   type: ClipType;
   content: string;
   title: string | null;
+  fileName: string | null;
+  mimeType: string | null;
+  size: number | null;
   isPublic: boolean;
   shareSlug: string | null;
   createdAt: FirebaseFirestore.Timestamp;
@@ -49,6 +56,9 @@ export function toClip(id: string, doc: ClipDoc): ClipboardItem {
     type: doc.type,
     content: doc.content,
     title: doc.title ?? null,
+    file_name: doc.fileName ?? null,
+    mime_type: doc.mimeType ?? null,
+    size: doc.size ?? null,
     is_public: doc.isPublic ?? false,
     share_slug: doc.shareSlug ?? null,
     created_at: iso(doc.createdAt),

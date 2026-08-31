@@ -7,7 +7,13 @@ import { adminBucket, adminDb } from "@/lib/firebase/admin";
 import { requireUser } from "@/lib/firebase/session";
 import { CLIPS, ownsPath } from "@/lib/firebase/paths";
 import { toClip, type ClipDoc } from "@/lib/firebase/types";
-import { MAX_TEXT_LENGTH, SIGNED_URL_TTL, type ActionResult, type ClipResult } from "./types";
+import {
+  MAX_FILE_BYTES,
+  MAX_TEXT_LENGTH,
+  SIGNED_URL_TTL,
+  type ActionResult,
+  type ClipResult,
+} from "./types";
 
 const slugId = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 10);
 
@@ -52,6 +58,9 @@ export async function createTextClip(content: string, title?: string): Promise<C
     type: "text" as const,
     content: value,
     title: cleanTitle(title),
+    fileName: null,
+    mimeType: null,
+    size: null,
     isPublic: false,
     shareSlug: null,
     createdAt: FieldValue.serverTimestamp(),
@@ -84,6 +93,9 @@ export async function createImageClip(storagePath: string, title?: string): Prom
       type: "image" as const,
       content: storagePath,
       title: cleanTitle(title),
+      fileName: null,
+      mimeType: null,
+      size: null,
       isPublic: false,
       shareSlug: null,
       createdAt: FieldValue.serverTimestamp(),
@@ -92,6 +104,53 @@ export async function createImageClip(storagePath: string, title?: string): Prom
   } catch {
     await adminBucket().file(storagePath).delete().catch(() => {});
     return { ok: false, error: "Could not save that image." };
+  }
+
+  const saved = await ref.get();
+  revalidatePath("/dashboard");
+  return { ok: true, clip: toClip(ref.id, saved.data() as ClipDoc) };
+}
+
+export async function createFileClip(
+  storagePath: string,
+  fileName: string,
+  mimeType: string,
+  size: number,
+  title?: string,
+): Promise<ClipResult> {
+  const user = await requireUser();
+
+  if (!ownsPath(user.uid, storagePath)) {
+    return { ok: false, error: "Invalid upload path." };
+  }
+
+  // The client checks this too for fast feedback, and storage.rules enforces it
+  // where a client cannot interfere. This is the server's own check.
+  if (size > MAX_FILE_BYTES) {
+    await adminBucket().file(storagePath).delete().catch(() => {});
+    return { ok: false, error: "Files need to be under 25 MB." };
+  }
+
+  const safeName = fileName.trim().slice(0, 200) || "file";
+  const ref = clips().doc();
+
+  try {
+    await ref.set({
+      userId: user.uid,
+      type: "file" as const,
+      content: storagePath,
+      title: cleanTitle(title),
+      fileName: safeName,
+      mimeType: mimeType || "application/octet-stream",
+      size,
+      isPublic: false,
+      shareSlug: null,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  } catch {
+    await adminBucket().file(storagePath).delete().catch(() => {});
+    return { ok: false, error: "Could not save that file." };
   }
 
   const saved = await ref.get();
@@ -155,7 +214,7 @@ export async function deleteClip(id: string): Promise<ActionResult> {
     return { ok: false, error: "Could not delete that clip." };
   }
 
-  if (owned.data.type === "image") {
+  if (owned.data.type !== "text") {
     await adminBucket().file(owned.data.content).delete().catch(() => {});
   }
 

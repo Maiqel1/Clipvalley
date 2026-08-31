@@ -17,9 +17,11 @@ service cloud.firestore {
     match /clips/{clipId} {
       allow read: if owns(resource.data.userId);
       allow create: if owns(request.resource.data.userId)
-                    && request.resource.data.type in ['text', 'image']
+                    && request.resource.data.type in ['text', 'image', 'file']
                     && request.resource.data.content is string
-                    && request.resource.data.content.size() <= 100000;
+                    && request.resource.data.content.size() <= 100000
+                    && (request.resource.data.type != 'file'
+                        || request.resource.data.fileName is string);
       allow update: if owns(resource.data.userId)
                     && owns(request.resource.data.userId);
       allow delete: if owns(resource.data.userId);

@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { findSharedClip } from "@/lib/data/clips";
 import { detectLink } from "@/lib/detect-link";
+import { formatBytes } from "@/lib/clipboard";
 import { Chip } from "@/components/ui/chip";
 import { Icon } from "@/components/ui/icon";
 import { ToastProvider } from "@/components/ui/toast";
@@ -59,6 +60,10 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
                 <Chip icon="image" tone="tertiary">
                   Image
                 </Chip>
+              ) : clip.type === "file" ? (
+                <Chip icon="description" tone="tertiary">
+                  File
+                </Chip>
               ) : link ? (
                 <Chip icon="link" tone="primary">
                   Link
@@ -73,7 +78,21 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
               <h2 className="mb-4 text-headline-md break-words text-on-surface">{clip.title}</h2>
             )}
 
-            {clip.type === "image" ? (
+            {clip.type === "file" ? (
+              <div className="flex items-center gap-4 rounded-md border border-outline-variant/20 bg-surface-container-low p-5">
+                <span className="grid size-12 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+                  <Icon name="description" size={24} />
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-body-md font-semibold text-on-surface">
+                    {clip.file_name ?? "File"}
+                  </p>
+                  <p className="text-body-sm text-on-surface-variant">
+                    {[formatBytes(clip.size), clip.mime_type].filter(Boolean).join(" · ")}
+                  </p>
+                </div>
+              </div>
+            ) : clip.type === "image" ? (
               imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -97,6 +116,7 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
               content={clip.content}
               imageUrl={imageUrl}
               clipId={clip.id}
+              fileName={clip.file_name}
             />
           </article>
 

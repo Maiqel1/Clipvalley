@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { ref, uploadBytes } from "firebase/storage";
 import { clientStorage } from "@/lib/firebase/client";
 import {
+  createFileClip,
   createImageClip,
   createTextClip,
   deleteClip,
@@ -13,7 +14,8 @@ import {
   updateClipTitle,
   updateTextClip,
 } from "@/lib/actions/clips";
-import { MAX_IMAGE_BYTES } from "@/lib/actions/types";
+import { MAX_FILE_BYTES, MAX_IMAGE_BYTES } from "@/lib/actions/types";
+import { mergeSnapshot, useClipsSubscription } from "@/lib/use-clips-subscription";
 import type { ClipboardItem } from "@/lib/firebase/types";
 import { duration, easeOutQuart, fadeUp } from "@/lib/motion";
 import { AppShell } from "@/components/app-shell";
@@ -41,6 +43,9 @@ function tempClip(partial: Partial<ClipboardItem> & Pick<ClipboardItem, "type" |
     is_public: false,
     share_slug: null,
     title: null,
+    file_name: null,
+    mime_type: null,
+    size: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     ...partial,
@@ -63,7 +68,6 @@ export function ClipsBoard({
   const [hasError, setHasError] = React.useState(false);
   const { toast } = useToast();
 
-  const syncState: SyncState = hasError ? "error" : pendingCount > 0 ? "pending" : "idle";
 
   const track = React.useCallback(async <T,>(work: () => Promise<T>) => {
     setPendingCount((n) => n + 1);
@@ -73,6 +77,32 @@ export function ClipsBoard({
       setPendingCount((n) => Math.max(0, n - 1));
     }
   }, []);
+
+  // Live updates from other devices. Additive only — if the listener cannot
+  // reach Firestore the server-rendered data stands and nothing breaks.
+  const live = useClipsSubscription(userId, (clips) => {
+    setEntries((prev) => mergeSnapshot(prev, clips, (clip) => ({ clip, status: "saved" })));
+
+    // A snapshot carries clip documents but no signed URLs, so anything that
+    // arrived from another device needs one fetched before it can render.
+    setImageUrls((current) => {
+      const missing = clips.filter((c) => c.type !== "text" && !current[c.content]);
+      for (const clip of missing) {
+        void refreshImageUrl(clip.content).then((url) => {
+          if (url) setImageUrls((prev) => ({ ...prev, [clip.content]: url }));
+        });
+      }
+      return current;
+    });
+  });
+
+  const syncState: SyncState = hasError
+    ? "error"
+    : pendingCount > 0
+      ? "pending"
+      : live
+        ? "live"
+        : "idle";
 
   const addText = React.useCallback(
     async (raw: string, title?: string) => {
@@ -116,7 +146,7 @@ export function ClipsBoard({
         return;
       }
       if (file.size > MAX_IMAGE_BYTES) {
-        toast("Images need to be under 5 MB.", "error");
+        toast("Images need to be under 10 MB.", "error");
         return;
       }
 
@@ -136,7 +166,7 @@ export function ClipsBoard({
       const result = await track(async () => {
         try {
           // Straight from the browser: Storage rules authorise the write against
-          // the {uid}/ prefix, and a 5 MB file would blow the server-action body limit.
+          // the {uid}/ prefix, and a large file would blow the server-action body limit.
           await uploadBytes(ref(clientStorage(), path), file, { contentType: file.type });
         } catch {
           return { ok: false as const, error: "Upload failed." };
@@ -236,6 +266,53 @@ export function ClipsBoard({
     };
   }, [addImage]);
 
+  const addFile = React.useCallback(
+    async (file: File, title?: string) => {
+      if (file.size > MAX_FILE_BYTES) {
+        toast("Files need to be under 25 MB.", "error");
+        return;
+      }
+
+      const dot = file.name.lastIndexOf(".");
+      const extension = dot > 0 ? file.name.slice(dot + 1).toLowerCase() : "bin";
+      const path = `${userId}/${crypto.randomUUID()}.${extension}`;
+      const mimeType = file.type || "application/octet-stream";
+
+      const optimistic = tempClip({
+        type: "file",
+        content: path,
+        user_id: userId,
+        title: title?.trim() || null,
+        file_name: file.name,
+        mime_type: mimeType,
+        size: file.size,
+      });
+      setEntries((prev) => [{ clip: optimistic, status: "pending" }, ...prev]);
+
+      const result = await track(async () => {
+        try {
+          await uploadBytes(ref(clientStorage(), path), file, { contentType: mimeType });
+        } catch {
+          return { ok: false as const, error: "Upload failed." };
+        }
+        return createFileClip(path, file.name, mimeType, file.size, title);
+      });
+
+      setEntries((prev) =>
+        prev.map((entry) =>
+          entry.clip.id !== optimistic.id
+            ? entry
+            : result.ok
+              ? { clip: result.clip, status: "saved" }
+              : { ...entry, status: "failed" },
+        ),
+      );
+
+      if (!result.ok) toast(result.error, "error");
+    },
+    [track, toast, userId],
+  );
+
   async function handleDelete(id: string) {
     const target = entries.find((entry) => entry.clip.id === id);
     setEntries((prev) => prev.filter((entry) => entry.clip.id !== id));
@@ -331,6 +408,7 @@ export function ClipsBoard({
         onClose={() => setComposerOpen(false)}
         onSubmitText={(value, title) => void addText(value, title)}
         onSubmitImage={(file, title) => void addImage(file, title)}
+        onSubmitFile={(file, title) => void addFile(file, title)}
       />
 
       <BookmarkPrompt />
