@@ -34,5 +34,12 @@
   },
   "overrides": {
     "jose": "^5.10.0"
-  }
+  },
+  "browserslist": [
+    "chrome 111",
+    "edge 111",
+    "firefox 111",
+    "safari 15.4",
+    "ios_saf 15.4"
+  ]
 }

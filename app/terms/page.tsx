@@ -20,7 +20,7 @@ export default function TermsPage() {
 
       <Section title="What the service does">
         <p>
-          {SITE_NAME} stores text and images you paste and makes them available on any device where
+          {SITE_NAME} stores the text, images and files you add and makes them available on any device where
           you sign in to the same account. Any clip can optionally be turned into a public read-only
           link.
         </p>
@@ -88,7 +88,7 @@ export default function TermsPage() {
           ]}
         />
         <p>
-          Images are limited to 5 MB each. We may apply further limits on storage or request volume
+          Images are limited to 10 MB each and other files to 25 MB. We may apply further limits on storage or request volume
           to keep the service running for everyone.
         </p>
       </Section>

@@ -11,7 +11,7 @@ import { Field } from "@/components/ui/input";
 import { Icon } from "@/components/ui/icon";
 import { GoogleButton } from "@/components/google-button";
 import { cn } from "@/lib/cn";
-import { duration, easeOutQuart, fadeUp } from "@/lib/motion";
+import { duration, easeOutQuart } from "@/lib/motion";
 
 // "reset" is a view rather than a tab — the tablist stays two items.
 type Tab = "login" | "signup" | "reset";
@@ -106,12 +106,7 @@ export function AuthCard({
 
   return (
     <main className="z-10 mx-auto w-full max-w-md">
-      <motion.div
-        className="mb-8 flex flex-col items-center"
-        initial="hidden"
-        animate="visible"
-        variants={fadeUp}
-      >
+      <div className="mb-8 flex animate-slide-fade-in flex-col items-center">
         <Image
           src="/logo.png"
           alt=""
@@ -124,13 +119,11 @@ export function AuthCard({
         <p className="mt-2 text-center text-body-md text-on-surface-variant">
           Seamlessly sync your clipboard.
         </p>
-      </motion.div>
+      </div>
 
-      <motion.div
-        className="glass-card w-full rounded-xl p-6 md:p-8"
-        initial={{ opacity: 0, y: 16, scale: 0.99 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: duration.slow, ease: easeOutQuart, delay: 0.08 }}
+      <div
+        className="glass-card w-full animate-slide-fade-in rounded-xl p-6 md:p-8"
+        style={{ animationDelay: "80ms" }}
       >
         {tab === "reset" ? (
           <div className="mb-8">
@@ -175,7 +168,7 @@ export function AuthCard({
             transition={{ duration: duration.fast, ease: easeOutQuart }}
           >
             {tab === "reset" ? (
-              <form onSubmit={handleReset} className="flex flex-col gap-4">
+              <form method="post" onSubmit={handleReset} className="flex flex-col gap-4">
                 <Field
                   label="Email Address"
                   icon="mail"
@@ -200,6 +193,7 @@ export function AuthCard({
               </form>
             ) : tab === "login" ? (
               <form
+                method="post"
                 onSubmit={(e) =>
                   submit(e, setLoginPending, (data) =>
                     signInWithPassword(
@@ -242,6 +236,7 @@ export function AuthCard({
               </form>
             ) : (
               <form
+                method="post"
                 onSubmit={(e) =>
                   submit(e, setSignupPending, (data) =>
                     signUpWithPassword(
@@ -301,7 +296,7 @@ export function AuthCard({
           </motion.div>
         </AnimatePresence>
 
-        <AnimatePresence>
+        <AnimatePresence initial={false}>
           {(state.error || state.notice) && (
             <motion.p
               initial={{ opacity: 0, height: 0, marginTop: 0 }}
@@ -328,7 +323,7 @@ export function AuthCard({
         </div>
 
         <GoogleButton next={next} />
-      </motion.div>
+      </div>
     </main>
   );
 }

@@ -13,7 +13,7 @@ export default function PrivacyPage() {
     <LegalPage title="Privacy Policy">
       <Section title="The short version">
         <p>
-          {SITE_NAME} stores the text and images you paste so you can retrieve them on your other
+          {SITE_NAME} stores the text, images and files you add so you can retrieve them on your other
           devices. We do not sell your data, we do not run advertising, and we do not use analytics
           or tracking cookies. The only cookies we set are the ones that keep you signed in.
         </p>
@@ -29,8 +29,8 @@ export default function PrivacyPage() {
               Google account.
             </>,
             <>
-              <strong className="text-on-surface">Your clips.</strong> The text and images you paste
-              into {SITE_NAME}, along with the time each was created. This is the content of the
+              <strong className="text-on-surface">Your clips.</strong> The text, images and files you add
+              to {SITE_NAME}, along with the time each was created. This is the content of the
               service; we store it so we can give it back to you.
             </>,
             <>
@@ -55,7 +55,7 @@ export default function PrivacyPage() {
               application code.
             </>,
             <>
-              Images live in a private storage bucket. They are never publicly listable, and are
+              Images and files live in a private storage bucket. They are never publicly listable, and are
               served through short-lived signed links generated only for you.
             </>,
             <>All traffic is encrypted in transit over HTTPS.</>,

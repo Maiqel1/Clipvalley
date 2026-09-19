@@ -10,7 +10,7 @@ import {
   type DocumentData,
   type Timestamp,
 } from "firebase/firestore";
-import { clientDb } from "@/lib/firebase/client";
+import { clientDb } from "@/lib/firebase/client-db";
 import { isFirebaseConfigured } from "@/lib/firebase/config";
 import { CLIPS } from "@/lib/firebase/paths";
 import type { ClipboardItem, ClipType } from "@/lib/firebase/types";

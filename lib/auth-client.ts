@@ -6,7 +6,7 @@ import {
   signOut as fbSignOut,
   type UserCredential,
 } from "firebase/auth";
-import { clientAuth } from "@/lib/firebase/client";
+import { clientAuth } from "@/lib/firebase/client-auth";
 
 async function mintSessionCookie(credential: UserCredential) {
   const idToken = await credential.user.getIdToken(true);

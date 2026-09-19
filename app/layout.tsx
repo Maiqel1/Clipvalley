@@ -1,6 +1,6 @@
-import { SessionKeeper } from "@/components/session-keeper";
 import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -42,16 +42,29 @@ const MATERIAL_SYMBOLS_HREF =
   "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" +
   `&icon_names=${ICON_NAMES}&display=block`;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://clipvalley.vercel.app";
+
+const SITE_DESCRIPTION =
+  "Paste text, images and files on one device and they appear live on every device you sign in to. Your clipboard history, synced to your account — no pairing, no cables.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Clipvalley — your clipboard, everywhere",
+    default: "Clipvalley — your clipboard, synced across every device",
     template: "%s · Clipvalley",
   },
-  description:
-    "Paste text or an image on one device, sign in on another, copy it back. No pairing, no cables.",
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    type: "website",
+    siteName: "Clipvalley",
+    title: "Clipvalley — your clipboard, synced across every device",
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Clipvalley — your clipboard, synced across every device",
+    description: SITE_DESCRIPTION,
+  },
   verification: {
     google: "TSRruGAR7le1R3zEZuhfoXHr3XSzL-Tb83thF4gLYE8",
   },
@@ -72,7 +85,6 @@ export default function RootLayout({
         <link rel="stylesheet" href={MATERIAL_SYMBOLS_HREF} />
       </head>
       <body className="min-h-screen bg-background font-sans text-on-background">
-        <SessionKeeper />
         {children}
       </body>
     </html>

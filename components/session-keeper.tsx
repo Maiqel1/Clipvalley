@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { onIdTokenChanged } from "firebase/auth";
-import { clientAuth } from "@/lib/firebase/client";
+import { clientAuth } from "@/lib/firebase/client-auth";
 import { isFirebaseConfigured } from "@/lib/firebase/config";
 
 // Firebase session cookies expire after 14 days and only a fresh ID token can

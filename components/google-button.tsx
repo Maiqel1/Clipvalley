@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
-import { clientAuth } from "@/lib/firebase/client";
+import { clientAuth } from "@/lib/firebase/client-auth";
 import { completeGoogleSignIn } from "@/lib/auth-client";
 import { createNonce } from "@/lib/nonce";
 import { Spinner } from "@/components/ui/button";

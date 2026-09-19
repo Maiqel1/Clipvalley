@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AuthCard } from "@/components/auth-card";
+import { SessionKeeper } from "@/components/session-keeper";
 
 export const metadata: Metadata = { title: "Sign in" };
 
@@ -13,6 +14,7 @@ export default async function LoginPage({
   return (
     <div className="relative flex min-h-screen items-center justify-center p-margin-mobile md:p-margin-desktop">
       <div className="ambient-bg" />
+      <SessionKeeper />
       <AuthCard
         initialTab={tab === "signup" || tab === "reset" ? tab : "login"}
         next={next}

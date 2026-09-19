@@ -97,7 +97,7 @@ export function SettingsView({ username, email, hasPassword }: SettingsViewProps
               : "Optional. You signed in with Google, which is all you need — add a password only if you also want to sign in with your email."
           }
         >
-          <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-4">
+          <form method="post" onSubmit={handlePasswordSubmit} className="flex flex-col gap-4">
             <Field
               label={hasPassword ? "New password" : "Password"}
               icon="lock"

@@ -1,7 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE } from "./session-cookie";
 
-const PUBLIC_PATHS = ["/", "/login", "/s", "/privacy", "/terms", "/session-ended"];
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/s",
+  "/privacy",
+  "/terms",
+  "/session-ended",
+  "/sitemap.xml",
+  "/robots.txt",
+  "/opengraph-image",
+];
 
 // These authenticate their own payload and are how a session is created, so
 // guarding them behind a session cookie makes sign-in impossible.

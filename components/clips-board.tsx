@@ -3,7 +3,7 @@
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ref, uploadBytes } from "firebase/storage";
-import { clientStorage } from "@/lib/firebase/client";
+import { clientStorage } from "@/lib/firebase/client-storage";
 import {
   createFileClip,
   createImageClip,

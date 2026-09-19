@@ -17,7 +17,9 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  if (!/^[a-z0-9]{6,32}$/.test(slug)) return { title: "Shared clip" };
+  if (!/^[a-z0-9]{6,32}$/.test(slug)) {
+    return { title: "Shared clip", robots: { index: false, follow: false } };
+  }
 
   const shared = await findSharedClip(slug);
 

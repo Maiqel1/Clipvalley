@@ -11,12 +11,12 @@ const STEPS: { icon: IconName; title: string; body: string }[] = [
   {
     icon: "content_copy",
     title: "Paste it here",
-    body: "Hit Ctrl+V anywhere on your dashboard. Text, screenshots, links — it lands as a card instantly.",
+    body: "Hit Ctrl+V anywhere on your dashboard. Text, screenshots, links, files — it lands as a card instantly.",
   },
   {
     icon: "person",
     title: "Sign in anywhere",
-    body: "No pairing, no codes, no cables. Your clips follow your account, not your devices.",
+    body: "No pairing, no codes, no cables. Your clips follow your account and show up live on every device.",
   },
   {
     icon: "check",
@@ -70,8 +70,9 @@ export default async function LandingPage() {
 
           <Reveal index={2}>
             <p className="mt-5 max-w-xl text-body-lg text-on-surface-variant">
-              Paste text or an image on one device. Sign in on another. Copy it straight back. No
-              pairing step, no cable, no emailing links to yourself.
+              Paste text, images or files on one device and they appear live on every other device
+              you sign in to. Your clipboard history stays with your account — no pairing, no cables,
+              no emailing links to yourself.
             </p>
           </Reveal>
 
