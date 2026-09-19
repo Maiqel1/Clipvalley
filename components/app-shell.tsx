@@ -9,7 +9,7 @@ import { cn } from "@/lib/cn";
 import { snappy } from "@/lib/motion";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Button, IconButton } from "@/components/ui/button";
-import { signOut } from "@/lib/actions/auth";
+import { useSignOut } from "@/lib/use-sign-out";
 import { SyncChip, type SyncState } from "@/components/sync-chip";
 import { NavPending } from "@/components/nav-pending";
 
@@ -31,6 +31,7 @@ export function AppShell({ username, syncState, onNewClip, children }: AppShellP
   const pathname = usePathname();
   const router = useRouter();
   const newClip = onNewClip ?? (() => router.push("/dashboard"));
+  const { signOut, signingOut } = useSignOut();
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
@@ -78,15 +79,17 @@ export function AppShell({ username, syncState, onNewClip, children }: AppShellP
           })}
         </nav>
 
-        <form action={signOut} className="mt-auto border-t border-outline-variant/30 pt-6">
+        <div className="mt-auto border-t border-outline-variant/30 pt-6">
           <button
-            type="submit"
-            className="flex w-full items-center gap-3 rounded-md px-4 py-3 text-label-md font-semibold text-on-surface-variant transition-colors duration-200 hover:bg-secondary-container/50"
+            type="button"
+            onClick={signOut}
+            disabled={signingOut}
+            className="flex w-full items-center gap-3 rounded-md px-4 py-3 text-label-md font-semibold text-on-surface-variant transition-colors duration-200 hover:bg-secondary-container/50 disabled:opacity-60"
           >
             <Icon name="logout" size={20} />
-            Logout
+            {signingOut ? "Logging out…" : "Logout"}
           </button>
-        </form>
+        </div>
       </aside>
 
       <div className="flex min-h-screen flex-1 flex-col md:ml-64">

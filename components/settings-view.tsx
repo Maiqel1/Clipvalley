@@ -4,9 +4,9 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { updatePassword, updateUsername } from "@/lib/actions/profile";
-import { reestablishSession, signOutEverywhere } from "@/lib/auth-client";
+import { reestablishSession, signOutOfDevice } from "@/lib/auth-client";
 import { emptyProfileState, type ProfileState } from "@/lib/actions/types";
-import { signOut } from "@/lib/actions/auth";
+import { useSignOut } from "@/lib/use-sign-out";
 import { cn } from "@/lib/cn";
 import { duration, easeOutQuart, fadeUp } from "@/lib/motion";
 import { AppShell } from "@/components/app-shell";
@@ -31,6 +31,7 @@ export function SettingsView({ username, email, hasPassword }: SettingsViewProps
   const [passwordPending, setPasswordPending] = React.useState(false);
 
   const router = useRouter();
+  const { signOut, signingOut } = useSignOut();
 
   async function handlePasswordSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,7 +49,7 @@ export function SettingsView({ username, email, hasPassword }: SettingsViewProps
       } catch {
         // Could not rebuild the session — clear the now-dead cookie rather than
         // leaving it to bounce between the guard and the page redirect.
-        await signOutEverywhere();
+        await signOutOfDevice();
         router.push("/login?notice=password-updated");
         return;
       }
@@ -126,12 +127,16 @@ export function SettingsView({ username, email, hasPassword }: SettingsViewProps
         </Card>
 
         <Card title="Session" description="You stay signed in on this device until you sign out.">
-          <form action={signOut}>
-            <Button type="submit" variant="secondary" className="self-start">
-              <Icon name="logout" size={18} />
-              Sign out
-            </Button>
-          </form>
+          <Button
+            type="button"
+            variant="secondary"
+            className="self-start"
+            loading={signingOut}
+            onClick={signOut}
+          >
+            <Icon name="logout" size={18} />
+            Sign out
+          </Button>
         </Card>
       </div>
     </AppShell>

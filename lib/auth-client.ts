@@ -92,7 +92,7 @@ export async function reestablishSession(customToken: string) {
   await mintSessionCookie(credential);
 }
 
-export async function signOutEverywhere() {
+export async function signOutOfDevice() {
   await fbSignOut(clientAuth()).catch(() => {});
   await fetch("/api/session", { method: "DELETE" }).catch(() => {});
 }

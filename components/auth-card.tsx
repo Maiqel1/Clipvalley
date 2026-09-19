@@ -107,15 +107,17 @@ export function AuthCard({
   return (
     <main className="z-10 mx-auto w-full max-w-md">
       <div className="mb-8 flex animate-slide-fade-in flex-col items-center">
-        <Image
-          src="/logo.png"
-          alt=""
-          width={80}
-          height={80}
-          priority
-          className="mb-4 size-20 object-contain"
-        />
-        <h1 className="text-headline-lg-mobile text-primary md:text-headline-lg">Clipvalley</h1>
+        <Link href="/" className="flex flex-col items-center" aria-label="Clipvalley home">
+          <Image
+            src="/logo.png"
+            alt=""
+            width={80}
+            height={80}
+            priority
+            className="mb-4 size-20 object-contain"
+          />
+          <h1 className="text-headline-lg-mobile text-primary md:text-headline-lg">Clipvalley</h1>
+        </Link>
         <p className="mt-2 text-center text-body-md text-on-surface-variant">
           Seamlessly sync your clipboard.
         </p>

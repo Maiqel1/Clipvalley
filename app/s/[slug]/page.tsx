@@ -49,7 +49,9 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
         <div className="ambient-bg" />
 
         <header className="mx-auto mb-10 flex w-full max-w-2xl items-center gap-4">
-          <Image src="/logo.png" alt="" width={44} height={44} className="size-11 object-contain" />
+          <Link href="/" aria-label="Clipvalley home" className="shrink-0">
+            <Image src="/logo.png" alt="" width={44} height={44} className="size-11 object-contain" />
+          </Link>
           <h1 className="text-headline-md text-on-surface md:text-headline-lg">
             Shared via Clipvalley
           </h1>
